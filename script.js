@@ -1,41 +1,90 @@
-// Financial RSS Feeds
+// Expanded Multi-Source RSS Feeds (India + Global + Economy/Policy)
 const FEEDS = [
-  { category: 'markets', source: 'Yahoo Finance', url: 'https://finance.yahoo.com/news/rssindex' },
-  { category: 'economy', source: 'CNBC Economy', url: 'https://search.cnbc.com/rs/search/combinednavbar/rss?partnerId=wr2012&id=20910258' },
-  { category: 'crypto', source: 'CoinDesk', url: 'https://www.coindesk.com/arc/outboundfeeds/rss/' }
+  // --- Indian Economy, Policy & Markets ---
+  { 
+    category: 'economy', 
+    source: 'Economic Times (Economy)', 
+    url: 'https://economictimes.indiatimes.com/news/economy/rssfeeds/1373380680.cms' 
+  },
+  { 
+    category: 'markets', 
+    source: 'Economic Times (Markets)', 
+    url: 'https://economictimes.indiatimes.com/markets/rssfeeds/2146842.cms' 
+  },
+  { 
+    category: 'economy', 
+    source: 'Times of India (Business)', 
+    url: 'https://timesofindia.indiatimes.com/rssfeeds/1898055.cms' 
+  },
+
+  // --- Global Markets & Policy ---
+  { 
+    category: 'markets', 
+    source: 'Yahoo Finance', 
+    url: 'https://finance.yahoo.com/news/rssindex' 
+  },
+  { 
+    category: 'economy', 
+    source: 'CNBC Economy & Fed', 
+    url: 'https://search.cnbc.com/rs/search/combinednavbar/rss?partnerId=wr2012&id=20910258' 
+  },
+
+  // --- Crypto & Tech ---
+  { 
+    category: 'crypto', 
+    source: 'CoinDesk', 
+    url: 'https://www.coindesk.com/arc/outboundfeeds/rss/' 
+  }
 ];
 
-// Fallback items in case proxy is slow
+// Contextual Fallback Data (India & Global Macro)
 const FALLBACK_NEWS = [
   {
-    title: "Global Central Banks Signal Cautious Stance on Interest Rate Cuts",
-    description: "Policymakers emphasize data-dependent approaches amidst sticky inflation trends worldwide.",
-    link: "https://finance.yahoo.com",
-    source: "Global Macro",
+    title: "RBI Monetary Policy Committee Maintains Repo Rate to Balance Growth and Inflation",
+    description: "The Reserve Bank of India keeps benchmark lending rates unchanged while monitoring rural consumption and fiscal consolidation targets.",
+    link: "https://economictimes.indiatimes.com",
+    source: "Economic Times",
     category: "economy",
     pubDate: new Date().toISOString()
   },
   {
-    title: "Tech Sector Rallies as Corporate Earnings Exceed Market Estimates",
-    description: "Major technology firms report strong quarterly revenue growth driven by cloud infrastructure investments.",
-    link: "https://finance.yahoo.com",
-    source: "MarketWatch",
-    category: "markets",
+    title: "India's Manufacturing PMI Expands Rapidly on Strong Domestic Demand and Export Growth",
+    description: "Factory activity across major industrial hubs posts robust expansion figures, boosting optimism across domestic stock indices.",
+    link: "https://timesofindia.indiatimes.com",
+    source: "Times of India",
+    category: "economy",
     pubDate: new Date().toISOString()
   },
   {
-    title: "Energy Markets Stabilize Following Supply Chain Inventory Reports",
-    description: "Crude oil prices hold steady as global demand forecasts align with production outputs.",
+    title: "GST Revenue Collections Surge Past Key Milestones Signal Robust Economic Activity",
+    description: "Monthly tax receipts indicate strong retail activity, corporate earnings momentum, and improved compliance across states.",
+    link: "https://economictimes.indiatimes.com",
+    source: "Economic Times",
+    category: "economy",
+    pubDate: new Date().toISOString()
+  },
+  {
+    title: "Global Central Banks Coordinate Policy Stance as Tech Rallies Lead Equity Markets",
+    description: "International monetary authorities evaluate employment data while technology stocks push major benchmarks to new high levels.",
     link: "https://finance.yahoo.com",
-    source: "Reuters",
+    source: "Yahoo Finance",
     category: "markets",
     pubDate: new Date().toISOString()
   }
 ];
 
-// Word Sentiment Dictionary
-const POSITIVE_WORDS = ['surge', 'rally', 'gain', 'growth', 'profit', 'boost', 'record', 'bullish', 'exceed', 'rise', 'positive', 'strong', 'jump'];
-const NEGATIVE_WORDS = ['drop', 'fall', 'slump', 'recession', 'inflation', 'loss', 'bearish', 'cut', 'lawsuit', 'warning', 'risk', 'decline', 'crisis', 'default'];
+// Expanded Financial Sentiment Lexicon
+const POSITIVE_WORDS = [
+  'surge', 'rally', 'gain', 'growth', 'profit', 'boost', 'record', 'bullish', 
+  'exceed', 'rise', 'positive', 'strong', 'jump', 'expansion', 'unaltered', 
+  'stimulus', 'dividend', 'soars', 'outperform', 'highest', 'upgrade'
+];
+
+const NEGATIVE_WORDS = [
+  'drop', 'fall', 'slump', 'recession', 'inflation', 'loss', 'bearish', 'cut', 
+  'lawsuit', 'warning', 'risk', 'decline', 'crisis', 'default', 'deficit', 
+  'plunge', 'slowdown', 'tensions', 'selloff', 'downward', 'downgrade'
+];
 
 let allArticles = [];
 let currentCategory = 'all';
@@ -71,19 +120,19 @@ function setupEventListeners() {
 
 async function fetchAllFeeds() {
   const grid = document.getElementById('newsGrid');
-  grid.innerHTML = `<div class="loading-state card"><i class="fa-solid fa-spinner fa-spin"></i> Fetching live global feeds...</div>`;
+  grid.innerHTML = `<div class="loading-state card"><i class="fa-solid fa-spinner fa-spin"></i> Aggregating live Indian & Global financial news...</div>`;
 
   let fetchedArticles = [];
 
   for (const feed of FEEDS) {
     try {
-      // Using public RSS-to-JSON endpoint
+      // CORS proxy feed fetching
       const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}`;
       const res = await fetch(proxyUrl);
       const data = await res.json();
 
-      if (data && data.items) {
-        const parsed = data.items.slice(0, 8).map(item => ({
+      if (data && data.items && data.items.length > 0) {
+        const parsed = data.items.slice(0, 6).map(item => ({
           title: item.title,
           description: stripHTML(item.description || item.content || ''),
           link: item.link,
@@ -94,16 +143,16 @@ async function fetchAllFeeds() {
         fetchedArticles.push(...parsed);
       }
     } catch (err) {
-      console.warn(`Feed error for ${feed.source}:`, err);
+      console.warn(`Feed issue on ${feed.source}:`, err);
     }
   }
 
-  // Use fallback if live fetch returned few results
-  if (fetchedArticles.length < 3) {
+  // Combine live feeds with backup articles
+  if (fetchedArticles.length < 5) {
     fetchedArticles = [...fetchedArticles, ...FALLBACK_NEWS];
   }
 
-  // Run sentiment calculation on each article
+  // Calculate Sentiment on all incoming stories
   allArticles = fetchedArticles.map(article => {
     const sentiment = calculateSentiment(`${article.title} ${article.description}`);
     return { ...article, sentiment };
@@ -131,7 +180,7 @@ function updateGlobalSentimentMeter() {
   if (allArticles.length === 0) return;
 
   const totalScore = allArticles.reduce((acc, curr) => acc + curr.sentiment.score, 0);
-  const normalizedScore = Math.max(-100, Math.min(100, totalScore * 10));
+  const normalizedScore = Math.max(-100, Math.min(100, totalScore * 8));
 
   const scoreEl = document.getElementById('sentimentScore');
   const statusEl = document.getElementById('sentimentStatus');
@@ -139,18 +188,17 @@ function updateGlobalSentimentMeter() {
 
   scoreEl.textContent = (normalizedScore > 0 ? '+' : '') + normalizedScore;
 
-  // Position pointer from 0% (Bearish) to 100% (Bullish)
   const pointerPercent = ((normalizedScore + 100) / 200) * 100;
   pointerEl.style.left = `${pointerPercent}%`;
 
-  if (normalizedScore > 15) {
-    statusEl.textContent = "Bullish Sentiment Dominates";
+  if (normalizedScore > 12) {
+    statusEl.textContent = "Bullish Sentiment / Growth Signals";
     statusEl.className = "bullish";
-  } else if (normalizedScore < -15) {
-    statusEl.textContent = "Bearish / Risk-Off Caution";
+  } else if (normalizedScore < -12) {
+    statusEl.textContent = "Bearish Sentiment / Market Caution";
     statusEl.className = "bearish";
   } else {
-    statusEl.textContent = "Neutral / Mixed Market Signals";
+    statusEl.textContent = "Neutral / Balanced Economic Outlook";
     statusEl.className = "neutral";
   }
 }
@@ -168,7 +216,7 @@ function renderNews() {
   });
 
   if (filtered.length === 0) {
-    grid.innerHTML = `<div class="loading-state card">No news articles match your filter or search query.</div>`;
+    grid.innerHTML = `<div class="loading-state card">No headlines matching "${searchQuery}" in category "${currentCategory}".</div>`;
     return;
   }
 
@@ -182,12 +230,12 @@ function renderNews() {
           <span>${formatDate(item.pubDate)}</span>
         </div>
         <a href="${item.link}" target="_blank" class="news-title">${item.title}</a>
-        <p class="news-snippet">${item.description || 'Click to read full story...'}</p>
+        <p class="news-snippet">${item.description || 'Click link below to read full article...'}</p>
       </div>
       <div class="card-bottom">
         <span class="sentiment-badge ${item.sentiment.type}">${item.sentiment.label}</span>
-        <a href="${item.link}" target="_blank" style="color: var(--accent); font-size:0.8rem; text-decoration:none;">
-          Read More <i class="fa-solid fa-arrow-up-right-from-square"></i>
+        <a href="${item.link}" target="_blank" style="color: var(--accent); font-size:0.8rem; text-decoration:none; font-weight:600;">
+          Read Article <i class="fa-solid fa-arrow-up-right-from-square"></i>
         </a>
       </div>
     `;
@@ -202,7 +250,7 @@ function stripHTML(html) {
 }
 
 function formatDate(dateStr) {
-  if (!dateStr) return 'Recent';
+  if (!dateStr) return 'Today';
   const d = new Date(dateStr);
-  return isNaN(d.getTime()) ? 'Recent' : `${d.getMonth() + 1}/${d.getDate()}`;
+  return isNaN(d.getTime()) ? 'Today' : `${d.getMonth() + 1}/${d.getDate()}`;
 }
