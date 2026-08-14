@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FinPulse - Global Financial Intelligence</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- FontAwesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Top Header -->
+    <header class="header">
+      <div class="logo-area">
+        <h1><i class="fa-solid fa-chart-line"></i> FinPulse</h1>
+        <span class="badge">Live Financial Terminal</span>
+      </div>
+      <p class="subtitle">Global financial news stream & real-time market sentiment engine</p>
+    </header>
+
+    <!-- Sentiment Meter Banner -->
+    <section class="sentiment-banner card">
+      <div class="sentiment-info">
+        <h2>Global Market Mood</h2>
+        <p id="sentimentStatus">Analyzing live headlines...</p>
+      </div>
+
+      <div class="gauge-container">
+        <div class="gauge-bar">
+          <div id="gaugePointer" class="gauge-pointer" style="left: 50%;"></div>
+        </div>
+        <div class="gauge-labels">
+          <span class="bearish">Bearish</span>
+          <span class="neutral">Neutral</span>
+          <span class="bullish">Bullish</span>
+        </div>
+      </div>
+
+      <div class="sentiment-score-box">
+        <span id="sentimentScore">0</span>
+        <label>Index Score</label>
+      </div>
+    </section>
+
+    <!-- Controls Bar -->
+    <section class="controls-bar card">
+      <!-- Search Input -->
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="searchInput" placeholder="Search global news (e.g. Fed, Gold, Tech, Inflation)..." />
+      </div>
+
+      <!-- Filter Buttons -->
+      <div class="category-filters">
+        <button class="filter-btn active" data-category="all">All News</button>
+        <button class="filter-btn" data-category="markets">Markets & Stocks</button>
+        <button class="filter-btn" data-category="economy">Economy & Policy</button>
+        <button class="filter-btn" data-category="crypto">Crypto & Tech</button>
+      </div>
+    </section>
+
+    <!-- News Grid -->
+    <main>
+      <div id="newsGrid" class="news-grid">
+        <div class="loading-state card">
+          <i class="fa-solid fa-spinner fa-spin"></i> Fetching global financial feeds...
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
