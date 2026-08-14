@@ -1,8 +1,29 @@
-<!-- Dual Sentiment Meters Banner -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FinPulse - Global Financial Terminal</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Top Header -->
+    <header class="header">
+      <div class="logo-area">
+        <h1><i class="fa-solid fa-chart-line"></i> FinPulse</h1>
+        <span class="badge">Live Financial Terminal</span>
+      </div>
+      <p class="subtitle">Global news stream & dual-market sentiment tracking</p>
+    </header>
+
+    <!-- Dual Sentiment Meters Banner -->
     <section class="dual-sentiment-banner">
       
       <!-- India Market Mood Card -->
-      <div class="card sentiment-card india-card">
+      <div class="card sentiment-card">
         <div class="card-header">
           <span class="region-flag">🇮🇳</span>
           <h2>India Market Mood</h2>
@@ -27,7 +48,7 @@
       </div>
 
       <!-- Global Market Mood Card -->
-      <div class="card sentiment-card global-card">
+      <div class="card sentiment-card">
         <div class="card-header">
           <span class="region-flag">🌐</span>
           <h2>Global Market Mood</h2>
@@ -52,3 +73,33 @@
       </div>
 
     </section>
+
+    <!-- Controls Bar -->
+    <section class="controls-bar card">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="searchInput" placeholder="Search news (e.g. RBI, Inflation, Fed, Tech)..." />
+      </div>
+
+      <div class="category-filters">
+        <button class="filter-btn active" data-category="all">All News</button>
+        <button class="filter-btn" data-category="markets">Markets & Stocks</button>
+        <button class="filter-btn" data-category="economy">Economy & Policy</button>
+        <button class="filter-btn" data-category="crypto">Crypto & Tech</button>
+      </div>
+    </section>
+
+    <!-- News Grid -->
+    <main>
+      <div id="newsGrid" class="news-grid">
+        <div class="loading-state card">
+          <i class="fa-solid fa-spinner fa-spin"></i> Fetching live financial news...
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
