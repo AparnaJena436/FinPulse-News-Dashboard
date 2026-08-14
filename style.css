@@ -74,11 +74,11 @@ body {
   padding: 20px;
 }
 
-/* DUAL SENTIMENT BANNER - FORCED GRID */
+/* DUAL SENTIMENT BANNER */
 .dual-sentiment-banner {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
-  gap: 20px !important;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
   width: 100%;
 }
 
