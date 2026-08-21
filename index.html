@@ -1,105 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>FinPulse - Global Financial Terminal</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>FinPulse - Financial News Dashboard</title>
+
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <div class="app-container">
-    
-    <!-- Top Header -->
-    <header class="header">
-      <div class="logo-area">
-        <h1><i class="fa-solid fa-chart-line"></i> FinPulse</h1>
-        <span class="badge">Live Financial Terminal</span>
-      </div>
-      <p class="subtitle">Global news stream & dual-market sentiment tracking</p>
+
+    <header>
+        <h1>📊 FinPulse</h1>
+        <p>Financial News & Market Sentiment Dashboard</p>
     </header>
 
-    <!-- Dual Sentiment Meters Banner -->
-    <section class="dual-sentiment-banner">
-      
-      <!-- India Market Mood Card -->
-      <div class="card sentiment-card">
-        <div class="card-header">
-          <span class="region-flag">🇮🇳</span>
-          <h2>India Market Mood</h2>
-        </div>
-        <div id="indiaStatus" class="sentiment-status">Calculating India mood...</div>
-        
-        <div class="gauge-container">
-          <div class="gauge-bar">
-            <div id="indiaGaugePointer" class="gauge-pointer" style="left: 50%;"></div>
-          </div>
-          <div class="gauge-labels">
-            <span class="bearish">Bearish</span>
-            <span class="neutral">Neutral</span>
-            <span class="bullish">Bullish</span>
-          </div>
-        </div>
-
-        <div class="sentiment-score-box">
-          <span id="indiaScore">0</span>
-          <label>India Sentiment Score</label>
-        </div>
-      </div>
-
-      <!-- Global Market Mood Card -->
-      <div class="card sentiment-card">
-        <div class="card-header">
-          <span class="region-flag">🌐</span>
-          <h2>Global Market Mood</h2>
-        </div>
-        <div id="globalStatus" class="sentiment-status">Calculating Global mood...</div>
-        
-        <div class="gauge-container">
-          <div class="gauge-bar">
-            <div id="globalGaugePointer" class="gauge-pointer" style="left: 50%;"></div>
-          </div>
-          <div class="gauge-labels">
-            <span class="bearish">Bearish</span>
-            <span class="neutral">Neutral</span>
-            <span class="bullish">Bullish</span>
-          </div>
-        </div>
-
-        <div class="sentiment-score-box">
-          <span id="globalScore">0</span>
-          <label>Global Sentiment Score</label>
-        </div>
-      </div>
-
-    </section>
-
-    <!-- Controls Bar -->
-    <section class="controls-bar card">
-      <div class="search-box">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" id="searchInput" placeholder="Search news (e.g. RBI, Inflation, Fed, Tech)..." />
-      </div>
-
-      <div class="category-filters">
-        <button class="filter-btn active" data-category="all">All News</button>
-        <button class="filter-btn" data-category="markets">Markets & Stocks</button>
-        <button class="filter-btn" data-category="economy">Economy & Policy</button>
-        <button class="filter-btn" data-category="crypto">Crypto & Tech</button>
-      </div>
-    </section>
-
-    <!-- News Grid -->
     <main>
-      <div id="newsGrid" class="news-grid">
-        <div class="loading-state card">
-          <i class="fa-solid fa-spinner fa-spin"></i> Fetching live financial news...
-        </div>
-      </div>
+
+        <!-- Sentiment Section -->
+        <section class="sentiment-section">
+
+            <div class="sentiment-card">
+                <h2>🇮🇳 India Market Sentiment</h2>
+                <div id="indiaSentiment">Loading...</div>
+            </div>
+
+            <div class="sentiment-card">
+                <h2>🌎 Global Market Sentiment</h2>
+                <div id="globalSentiment">Loading...</div>
+            </div>
+
+        </section>
+
+
+        <!-- India News -->
+        <section class="news-section">
+
+            <h2>🇮🇳 India Financial News</h2>
+
+            <div id="indiaNews" class="news-container">
+                Loading news...
+            </div>
+
+        </section>
+
+
+        <!-- Global News -->
+        <section class="news-section">
+
+            <h2>🌎 Global Financial News</h2>
+
+            <div id="globalNews" class="news-container">
+                Loading news...
+            </div>
+
+        </section>
+
     </main>
 
-  </div>
 
-  <script src="script.js"></script>
+    <footer>
+        <p>FinPulse | Financial News Dashboard</p>
+    </footer>
+
+
+    <script src="script.js"></script>
+
 </body>
 </html>
