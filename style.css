@@ -1,4 +1,10 @@
 /* =====================================
+   FINPULSE V2
+   FINANCIAL NEWS INTELLIGENCE DASHBOARD
+===================================== */
+
+
+/* =====================================
    GLOBAL
 ===================================== */
 
@@ -8,9 +14,7 @@
     box-sizing: border-box;
 }
 
-
 :root {
-
     --background: #07090d;
     --card: #0d1117;
     --card-hover: #111720;
@@ -30,8 +34,11 @@
 }
 
 
-body.light-mode {
+/* =====================================
+   LIGHT MODE
+===================================== */
 
+body.light-mode {
     --background: #f4f6f8;
     --card: #ffffff;
     --card-hover: #f8fafc;
@@ -46,8 +53,11 @@ body.light-mode {
 }
 
 
-body {
+/* =====================================
+   BODY
+===================================== */
 
+body {
     font-family:
         Inter,
         -apple-system,
@@ -55,25 +65,24 @@ body {
         "Segoe UI",
         sans-serif;
 
-    background: var(--background);
+    background:
+        var(--background);
 
-    color: var(--text);
+    color:
+        var(--text);
 
-    min-height: 100vh;
+    min-height:
+        100vh;
 
     transition:
         background 0.3s ease,
         color 0.3s ease;
 }
 
-
 button,
 input {
-
     font-family: inherit;
-
 }
-
 
 
 /* =====================================
@@ -81,7 +90,6 @@ input {
 ===================================== */
 
 .navbar {
-
     height: 72px;
 
     padding:
@@ -90,11 +98,14 @@ input {
     border-bottom:
         1px solid var(--border);
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    justify-content: space-between;
+    justify-content:
+        space-between;
 
     background:
         rgba(7, 9, 13, 0.85);
@@ -102,69 +113,81 @@ input {
     backdrop-filter:
         blur(15px);
 
-    position: sticky;
+    position:
+        sticky;
 
-    top: 0;
+    top:
+        0;
 
-    z-index: 100;
+    z-index:
+        100;
 }
-
 
 .logo {
+    font-size:
+        22px;
 
-    font-size: 22px;
+    font-weight:
+        800;
 
-    font-weight: 800;
-
-    letter-spacing: -0.5px;
+    letter-spacing:
+        -0.5px;
 }
-
 
 .logo span {
+    color:
+        var(--green);
 
-    color: var(--green);
-
-    margin-right: 5px;
+    margin-right:
+        5px;
 }
-
 
 .nav-right {
+    display:
+        flex;
 
-    display: flex;
+    align-items:
+        center;
 
-    align-items: center;
-
-    gap: 20px;
+    gap:
+        20px;
 }
-
 
 .live-status {
+    font-size:
+        12px;
 
-    font-size: 12px;
+    color:
+        var(--green);
 
-    color: var(--green);
+    font-weight:
+        700;
 
-    font-weight: 700;
+    letter-spacing:
+        1px;
 
-    letter-spacing: 1px;
+    display:
+        flex;
 
-    display: flex;
+    align-items:
+        center;
 
-    align-items: center;
-
-    gap: 7px;
+    gap:
+        7px;
 }
 
-
 .live-dot {
+    width:
+        7px;
 
-    width: 7px;
+    height:
+        7px;
 
-    height: 7px;
+    background:
+        var(--green);
 
-    background: var(--green);
-
-    border-radius: 50%;
+    border-radius:
+        50%;
 
     box-shadow:
         0 0 10px var(--green);
@@ -173,28 +196,29 @@ input {
         pulse 1.5s infinite;
 }
 
-
 @keyframes pulse {
-
     0% {
-        opacity: 1;
+        opacity:
+            1;
     }
 
     50% {
-        opacity: 0.35;
+        opacity:
+            0.35;
     }
 
     100% {
-        opacity: 1;
+        opacity:
+            1;
     }
 }
 
-
 .theme-btn {
+    width:
+        38px;
 
-    width: 38px;
-
-    height: 38px;
+    height:
+        38px;
 
     border:
         1px solid var(--border);
@@ -208,15 +232,14 @@ input {
     border-radius:
         8px;
 
-    cursor: pointer;
+    cursor:
+        pointer;
 
     transition:
         0.2s;
 }
 
-
 .theme-btn:hover {
-
     border-color:
         var(--green);
 
@@ -225,21 +248,22 @@ input {
 }
 
 
-
 /* =====================================
    HERO
 ===================================== */
 
 .hero {
+    width:
+        90%;
 
-    width: 90%;
-
-    max-width: 1250px;
+    max-width:
+        1250px;
 
     margin:
         70px auto 50px;
 
-    display: flex;
+    display:
+        flex;
 
     justify-content:
         space-between;
@@ -247,27 +271,29 @@ input {
     align-items:
         flex-end;
 
-    gap: 30px;
+    gap:
+        30px;
 }
-
 
 .eyebrow,
 .section-label {
+    font-size:
+        11px;
 
-    font-size: 11px;
+    letter-spacing:
+        2px;
 
-    letter-spacing: 2px;
+    color:
+        var(--green);
 
-    color: var(--green);
+    font-weight:
+        700;
 
-    font-weight: 700;
-
-    margin-bottom: 10px;
+    margin-bottom:
+        10px;
 }
 
-
 .hero h1 {
-
     font-size:
         clamp(36px, 5vw, 62px);
 
@@ -281,16 +307,12 @@ input {
         750px;
 }
 
-
 .hero h1 span {
-
     color:
         var(--green);
 }
 
-
 .hero-description {
-
     color:
         var(--muted);
 
@@ -307,9 +329,7 @@ input {
         16px;
 }
 
-
 .hero-date {
-
     color:
         var(--muted);
 
@@ -321,13 +341,11 @@ input {
 }
 
 
-
 /* =====================================
    MAIN
 ===================================== */
 
 main {
-
     width:
         90%;
 
@@ -338,16 +356,12 @@ main {
         auto;
 }
 
-
 .section {
-
     margin-bottom:
         55px;
 }
 
-
 .section-heading {
-
     display:
         flex;
 
@@ -361,9 +375,7 @@ main {
         22px;
 }
 
-
 .section-heading h2 {
-
     font-size:
         27px;
 
@@ -371,9 +383,7 @@ main {
         -0.8px;
 }
 
-
 .update-text {
-
     font-size:
         12px;
 
@@ -382,13 +392,11 @@ main {
 }
 
 
-
 /* =====================================
    MARKET CARDS
 ===================================== */
 
 .market-grid {
-
     display:
         grid;
 
@@ -399,10 +407,8 @@ main {
         20px;
 }
 
-
 .market-card,
 .panel {
-
     background:
         var(--card);
 
@@ -424,10 +430,8 @@ main {
         background 0.25s ease;
 }
 
-
 .market-card:hover,
 .panel:hover {
-
     transform:
         translateY(-4px);
 
@@ -438,9 +442,7 @@ main {
         var(--card-hover);
 }
 
-
 .market-card-top {
-
     display:
         flex;
 
@@ -451,9 +453,7 @@ main {
         flex-start;
 }
 
-
 .market-name {
-
     font-size:
         17px;
 
@@ -461,9 +461,7 @@ main {
         700;
 }
 
-
 .market-card-top p {
-
     color:
         var(--muted);
 
@@ -475,13 +473,11 @@ main {
 }
 
 
-
 /* =====================================
    STATUS
 ===================================== */
 
 .status-badge {
-
     padding:
         6px 12px;
 
@@ -495,9 +491,7 @@ main {
         700;
 }
 
-
 .status-badge.bullish {
-
     color:
         var(--green);
 
@@ -505,9 +499,7 @@ main {
         rgba(34, 197, 94, 0.1);
 }
 
-
 .status-badge.bearish {
-
     color:
         var(--red);
 
@@ -515,9 +507,7 @@ main {
         rgba(239, 68, 68, 0.1);
 }
 
-
 .status-badge.neutral {
-
     color:
         var(--yellow);
 
@@ -526,20 +516,16 @@ main {
 }
 
 
-
 /* =====================================
    SENTIMENT GAUGE
 ===================================== */
 
 .gauge-container {
-
     margin-top:
         35px;
 }
 
-
 .gauge {
-
     position:
         relative;
 
@@ -558,9 +544,7 @@ main {
         );
 }
 
-
 .gauge::after {
-
     content:
         "";
 
@@ -576,14 +560,12 @@ main {
     background:
         linear-gradient(
             to right,
-            rgba(0,0,0,0.3),
-            rgba(0,0,0,0.05)
+            rgba(0, 0, 0, 0.3),
+            rgba(0, 0, 0, 0.05)
         );
 }
 
-
 .gauge-pointer {
-
     position:
         absolute;
 
@@ -612,15 +594,13 @@ main {
         50%;
 
     box-shadow:
-        0 0 15px rgba(255,255,255,0.3);
+        0 0 15px rgba(255, 255, 255, 0.3);
 
     transition:
-        left 1s cubic-bezier(.22,.61,.36,1);
+        left 1s cubic-bezier(.22, .61, .36, 1);
 }
 
-
 .gauge-labels {
-
     display:
         flex;
 
@@ -640,16 +620,12 @@ main {
         uppercase;
 }
 
-
 .score-display {
-
     margin-top:
         25px;
 }
 
-
 .score-display strong {
-
     font-size:
         42px;
 
@@ -657,9 +633,7 @@ main {
         -2px;
 }
 
-
 .score-display span {
-
     color:
         var(--muted);
 
@@ -667,9 +641,7 @@ main {
         13px;
 }
 
-
 .market-description {
-
     color:
         var(--muted);
 
@@ -684,13 +656,11 @@ main {
 }
 
 
-
 /* =====================================
    MINI STATS
 ===================================== */
 
 .mini-stats {
-
     display:
         grid;
 
@@ -710,9 +680,7 @@ main {
         10px;
 }
 
-
 .mini-stats div {
-
     display:
         flex;
 
@@ -723,9 +691,7 @@ main {
         4px;
 }
 
-
 .mini-stats span {
-
     color:
         var(--muted);
 
@@ -733,13 +699,10 @@ main {
         11px;
 }
 
-
 .mini-stats strong {
-
     font-size:
         16px;
 }
-
 
 
 /* =====================================
@@ -747,7 +710,6 @@ main {
 ===================================== */
 
 .dashboard-grid {
-
     display:
         grid;
 
@@ -761,9 +723,7 @@ main {
         55px;
 }
 
-
 .panel-heading {
-
     display:
         flex;
 
@@ -777,16 +737,12 @@ main {
         25px;
 }
 
-
 .panel-heading h3 {
-
     font-size:
         20px;
 }
 
-
 .panel-heading > span {
-
     font-size:
         11px;
 
@@ -795,13 +751,11 @@ main {
 }
 
 
-
 /* =====================================
    NEWS BREAKDOWN
 ===================================== */
 
 .breakdown-row {
-
     display:
         flex;
 
@@ -815,9 +769,7 @@ main {
         13px;
 }
 
-
 .breakdown-title {
-
     display:
         flex;
 
@@ -828,9 +780,7 @@ main {
         8px;
 }
 
-
 .dot {
-
     width:
         8px;
 
@@ -841,27 +791,22 @@ main {
         50%;
 }
 
-
 .dot.bullish {
     background:
         var(--green);
 }
-
 
 .dot.neutral {
     background:
         var(--yellow);
 }
 
-
 .dot.bearish {
     background:
         var(--red);
 }
 
-
 .progress {
-
     height:
         5px;
 
@@ -878,9 +823,7 @@ main {
         hidden;
 }
 
-
 .progress-fill {
-
     height:
         100%;
 
@@ -894,18 +837,15 @@ main {
         10px;
 }
 
-
 .bullish-fill {
     background:
         var(--green);
 }
 
-
 .neutral-fill {
     background:
         var(--yellow);
 }
-
 
 .bearish-fill {
     background:
@@ -913,13 +853,11 @@ main {
 }
 
 
-
 /* =====================================
    SECTORS
 ===================================== */
 
 .sector-list {
-
     display:
         flex;
 
@@ -930,16 +868,20 @@ main {
         14px;
 }
 
-
 .sector-row {
-
     cursor:
         pointer;
+
+    transition:
+        transform 0.2s ease;
 }
 
+.sector-row:hover {
+    transform:
+        translateX(4px);
+}
 
 .sector-top {
-
     display:
         flex;
 
@@ -953,23 +895,17 @@ main {
         6px;
 }
 
-
 .sector-name {
-
     color:
         var(--text);
 }
 
-
 .sector-count {
-
     color:
         var(--muted);
 }
 
-
 .sector-bar {
-
     height:
         5px;
 
@@ -983,9 +919,7 @@ main {
         hidden;
 }
 
-
 .sector-bar-fill {
-
     height:
         100%;
 
@@ -999,13 +933,10 @@ main {
         width 0.8s ease;
 }
 
-
-.sector-row:hover .sector-bar-fill {
-
+.sector-row .sector-bar-fill {
     background:
         var(--green);
 }
-
 
 
 /* =====================================
@@ -1013,7 +944,6 @@ main {
 ===================================== */
 
 .controls {
-
     display:
         flex;
 
@@ -1027,9 +957,7 @@ main {
         18px;
 }
 
-
 .search-box {
-
     display:
         flex;
 
@@ -1061,19 +989,19 @@ main {
         220px;
 
     transition:
-        border-color 0.2s;
+        border-color 0.2s,
+        box-shadow 0.2s;
 }
-
 
 .search-box:focus-within {
-
     border-color:
         var(--blue);
+
+    box-shadow:
+        0 0 0 3px rgba(59, 130, 246, 0.08);
 }
 
-
 .search-box input {
-
     border:
         none;
 
@@ -1093,16 +1021,12 @@ main {
         13px;
 }
 
-
 .search-box input::placeholder {
-
     color:
         var(--muted);
 }
 
-
 .filter-group {
-
     display:
         flex;
 
@@ -1113,10 +1037,8 @@ main {
         wrap;
 }
 
-
 .filter-btn,
 .sentiment-filter {
-
     height:
         42px;
 
@@ -1145,21 +1067,20 @@ main {
         0.2s;
 }
 
-
 .filter-btn:hover,
 .sentiment-filter:hover {
-
     color:
         var(--text);
 
     border-color:
         #3b4655;
-}
 
+    transform:
+        translateY(-1px);
+}
 
 .filter-btn.active,
 .sentiment-filter.active {
-
     color:
         var(--text);
 
@@ -1168,8 +1089,10 @@ main {
 
     border-color:
         var(--blue);
-}
 
+    box-shadow:
+        0 0 0 2px rgba(59, 130, 246, 0.08);
+}
 
 
 /* =====================================
@@ -1177,7 +1100,6 @@ main {
 ===================================== */
 
 .results-info {
-
     color:
         var(--muted);
 
@@ -1189,13 +1111,11 @@ main {
 }
 
 
-
 /* =====================================
    NEWS CARDS
 ===================================== */
 
 .news-container {
-
     display:
         grid;
 
@@ -1203,9 +1123,7 @@ main {
         15px;
 }
 
-
 .news-card {
-
     background:
         var(--card);
 
@@ -1225,9 +1143,7 @@ main {
         fadeIn 0.4s ease;
 }
 
-
 .news-card:hover {
-
     border-color:
         #34404f;
 
@@ -1238,23 +1154,25 @@ main {
         var(--shadow);
 }
 
-
 @keyframes fadeIn {
-
     from {
-        opacity: 0;
-        transform: translateY(8px);
+        opacity:
+            0;
+
+        transform:
+            translateY(8px);
     }
 
     to {
-        opacity: 1;
-        transform: translateY(0);
+        opacity:
+            1;
+
+        transform:
+            translateY(0);
     }
 }
 
-
 .news-top {
-
     display:
         flex;
 
@@ -1268,9 +1186,7 @@ main {
         10px;
 }
 
-
 .news-meta {
-
     display:
         flex;
 
@@ -1281,10 +1197,8 @@ main {
         wrap;
 }
 
-
 .news-source,
 .news-industry {
-
     font-size:
         10px;
 
@@ -1301,9 +1215,7 @@ main {
         var(--muted);
 }
 
-
 .sentiment-label {
-
     font-size:
         10px;
 
@@ -1317,39 +1229,31 @@ main {
         5px;
 }
 
-
 .sentiment-label.bullish {
-
     color:
         var(--green);
 
     background:
-        rgba(34,197,94,0.1);
+        rgba(34, 197, 94, 0.1);
 }
 
-
 .sentiment-label.neutral {
-
     color:
         var(--yellow);
 
     background:
-        rgba(234,179,8,0.1);
+        rgba(234, 179, 8, 0.1);
 }
 
-
 .sentiment-label.bearish {
-
     color:
         var(--red);
 
     background:
-        rgba(239,68,68,0.1);
+        rgba(239, 68, 68, 0.1);
 }
 
-
 .news-card h3 {
-
     font-size:
         18px;
 
@@ -1363,9 +1267,7 @@ main {
         -0.3px;
 }
 
-
 .news-description {
-
     color:
         var(--muted);
 
@@ -1376,9 +1278,7 @@ main {
         1.7;
 }
 
-
 .news-bottom {
-
     display:
         flex;
 
@@ -1398,9 +1298,7 @@ main {
         1px solid var(--border);
 }
 
-
 .read-link {
-
     color:
         var(--blue);
 
@@ -1414,16 +1312,12 @@ main {
         700;
 }
 
-
 .read-link:hover {
-
     text-decoration:
         underline;
 }
 
-
 .explain-btn {
-
     background:
         transparent;
 
@@ -1449,16 +1343,19 @@ main {
         0.2s;
 }
 
-
 .explain-btn:hover {
-
     border-color:
         var(--blue);
 
     color:
         var(--blue);
-}
 
+    background:
+        rgba(59, 130, 246, 0.05);
+
+    transform:
+        translateY(-1px);
+}
 
 
 /* =====================================
@@ -1466,7 +1363,6 @@ main {
 ===================================== */
 
 .news-analysis {
-
     display:
         none;
 
@@ -1477,94 +1373,131 @@ main {
         20px;
 
     background:
-        rgba(59,130,246,0.04);
+        linear-gradient(
+            135deg,
+            rgba(59, 130, 246, 0.06),
+            rgba(34, 197, 94, 0.025)
+        );
 
     border:
-        1px solid rgba(59,130,246,0.18);
+        1px solid rgba(59, 130, 246, 0.22);
 
     border-radius:
-        10px;
+        12px;
 
     animation:
         slideDown 0.3s ease;
 }
 
-
 .news-analysis.show {
-
     display:
         block;
 }
 
 
-@keyframes slideDown {
-
-    from {
-
-        opacity:
-            0;
-
-        transform:
-            translateY(-5px);
-
-    }
-
-    to {
-
-        opacity:
-            1;
-
-        transform:
-            translateY(0);
-
-    }
-}
-
+/* =====================================
+   ANALYSIS HEADER
+===================================== */
 
 .analysis-title {
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        8px;
 
     font-size:
         14px;
 
     font-weight:
-        700;
+        800;
 
     margin-bottom:
-        15px;
+        18px;
 
     color:
         var(--blue);
+
+    letter-spacing:
+        0.3px;
 }
 
+
+/* =====================================
+   ANALYSIS ITEMS
+===================================== */
 
 .analysis-item {
+    padding:
+        14px 15px;
 
     margin-bottom:
-        14px;
+        10px;
+
+    background:
+        rgba(255, 255, 255, 0.025);
+
+    border:
+        1px solid var(--border);
+
+    border-radius:
+        9px;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
 }
 
+.analysis-item:hover {
+    background:
+        var(--card-hover);
+
+    border-color:
+        rgba(59, 130, 246, 0.35);
+
+    transform:
+        translateX(3px);
+}
 
 .analysis-item:last-child {
-
     margin-bottom:
         0;
 }
 
 
-.analysis-item strong {
+/* =====================================
+   ANALYSIS HEADINGS
+===================================== */
 
+.analysis-item strong {
     display:
         block;
 
     font-size:
         12px;
 
+    font-weight:
+        700;
+
+    color:
+        var(--text);
+
     margin-bottom:
-        4px;
+        7px;
 }
 
 
+/* =====================================
+   ANALYSIS TEXT
+===================================== */
+
 .analysis-item span {
+    display:
+        block;
 
     color:
         var(--muted);
@@ -1573,9 +1506,81 @@ main {
         12px;
 
     line-height:
-        1.7;
+        1.75;
 }
 
+
+/* =====================================
+   ANALYSIS HIGHLIGHTS
+===================================== */
+
+/* Company / Stock */
+
+.analysis-item:nth-child(3) span {
+    color:
+        var(--text);
+
+    font-weight:
+        600;
+}
+
+
+/* Industry */
+
+.analysis-item:nth-child(4) span {
+    color:
+        var(--blue);
+
+    font-weight:
+        600;
+}
+
+
+/* Current / Future Impact */
+
+.analysis-item:nth-child(5) {
+    border-left:
+        3px solid var(--green);
+}
+
+
+/* Timing */
+
+.analysis-item:nth-child(6) {
+    border-left:
+        3px solid var(--yellow);
+}
+
+
+/* Who is affected */
+
+.analysis-item:nth-child(7) {
+    border-left:
+        3px solid var(--blue);
+}
+
+
+/* =====================================
+   ANALYSIS ANIMATION
+===================================== */
+
+@keyframes slideDown {
+    from {
+        opacity:
+            0;
+
+        transform:
+            translateY(-6px);
+    }
+
+    to {
+        opacity:
+            1;
+
+        transform:
+            translateY(0);
+    }
+}
 
 
 /* =====================================
@@ -1583,7 +1588,6 @@ main {
 ===================================== */
 
 .loading-card {
-
     padding:
         50px;
 
@@ -1603,9 +1607,7 @@ main {
         var(--muted);
 }
 
-
 .loader {
-
     width:
         30px;
 
@@ -1628,16 +1630,12 @@ main {
         0 auto 15px;
 }
 
-
 @keyframes spin {
-
     to {
         transform:
             rotate(360deg);
     }
-
 }
-
 
 
 /* =====================================
@@ -1645,7 +1643,6 @@ main {
 ===================================== */
 
 .empty-state {
-
     padding:
         50px;
 
@@ -1666,13 +1663,11 @@ main {
 }
 
 
-
 /* =====================================
    FOOTER
 ===================================== */
 
 footer {
-
     margin-top:
         70px;
 
@@ -1689,9 +1684,7 @@ footer {
         var(--muted);
 }
 
-
 .footer-logo {
-
     color:
         var(--text);
 
@@ -1702,9 +1695,7 @@ footer {
         7px;
 }
 
-
 footer p {
-
     font-size:
         12px;
 
@@ -1712,13 +1703,10 @@ footer p {
         5px;
 }
 
-
 footer small {
-
     font-size:
         10px;
 }
-
 
 
 /* =====================================
@@ -1729,18 +1717,15 @@ footer small {
 
     .market-grid,
     .dashboard-grid {
-
         grid-template-columns:
             1fr;
     }
-
 }
 
 
 @media (max-width: 700px) {
 
     .hero {
-
         flex-direction:
             column;
 
@@ -1753,14 +1738,12 @@ footer small {
 
 
     .hero h1 {
-
         letter-spacing:
             -1.5px;
     }
 
 
     .section-heading {
-
         align-items:
             flex-start;
 
@@ -1773,14 +1756,12 @@ footer small {
 
 
     .controls {
-
         flex-direction:
             column;
     }
 
 
     .filter-group {
-
         width:
             100%;
     }
@@ -1788,14 +1769,12 @@ footer small {
 
     .filter-btn,
     .sentiment-filter {
-
         flex:
             1;
     }
 
 
     .news-bottom {
-
         flex-direction:
             column;
 
@@ -1805,5 +1784,152 @@ footer small {
         gap:
             12px;
     }
+}
 
+
+/* =====================================
+   SMALL MOBILE
+===================================== */
+
+@media (max-width: 600px) {
+
+    .navbar {
+        height:
+            64px;
+
+        padding:
+            0 4%;
+    }
+
+
+    .logo {
+        font-size:
+            19px;
+    }
+
+
+    .nav-right {
+        gap:
+            10px;
+    }
+
+
+    .live-status {
+        font-size:
+            9px;
+    }
+
+
+    .hero {
+        width:
+            92%;
+
+        margin:
+            40px auto 35px;
+    }
+
+
+    main {
+        width:
+            92%;
+    }
+
+
+    .market-card,
+    .panel {
+        padding:
+            18px;
+    }
+
+
+    .score-display strong {
+        font-size:
+            34px;
+    }
+
+
+    .mini-stats strong {
+        font-size:
+            14px;
+    }
+
+
+    .news-card {
+        padding:
+            17px;
+    }
+
+
+    .news-card h3 {
+        font-size:
+            16px;
+    }
+
+
+    .news-description {
+        font-size:
+            12px;
+    }
+
+
+    .news-analysis {
+        padding:
+            15px;
+    }
+
+
+    .analysis-item {
+        padding:
+            12px;
+    }
+
+
+    .analysis-item strong {
+        font-size:
+            11px;
+    }
+
+
+    .analysis-item span {
+        font-size:
+            11px;
+
+        line-height:
+            1.65;
+    }
+}
+
+
+/* =====================================
+   EXTRA INTERACTION
+===================================== */
+
+.market-card,
+.panel,
+.news-card,
+.filter-btn,
+.sentiment-filter,
+.explain-btn,
+.theme-btn {
+    -webkit-tap-highlight-color:
+        transparent;
+}
+
+
+/* Smooth scrolling */
+
+html {
+    scroll-behavior:
+        smooth;
+}
+
+
+/* Selection */
+
+::selection {
+    background:
+        rgba(59, 130, 246, 0.25);
+
+    color:
+        var(--text);
 }
