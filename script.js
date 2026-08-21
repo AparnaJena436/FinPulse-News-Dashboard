@@ -1,6 +1,6 @@
 /* =========================================================
    FINPULSE V2
-   Financial News Intelligence Dashboard
+   FINANCIAL NEWS INTELLIGENCE DASHBOARD
    ========================================================= */
 
 
@@ -17,6 +17,7 @@ const RSS2JSON_API =
 ========================================================= */
 
 const indiaFeeds = [
+
     {
         name: "Moneycontrol",
         url: "https://www.moneycontrol.com/rss/latestnews.xml"
@@ -31,10 +32,12 @@ const indiaFeeds = [
         name: "Business Standard",
         url: "https://www.business-standard.com/rss/home_page_top_stories.rss"
     }
+
 ];
 
 
 const globalFeeds = [
+
     {
         name: "Reuters",
         url: "https://feeds.reuters.com/reuters/businessNews"
@@ -49,6 +52,7 @@ const globalFeeds = [
         name: "MarketWatch",
         url: "https://feeds.marketwatch.com/marketwatch/topstories/"
     }
+
 ];
 
 
@@ -58,17 +62,13 @@ const globalFeeds = [
 
 let allNews = [];
 
-let currentMarket =
-    "all";
+let currentMarket = "all";
 
-let currentIndustry =
-    "all";
+let currentIndustry = "all";
 
-let currentSentiment =
-    "all";
+let currentSentiment = "all";
 
-let searchTerm =
-    "";
+let searchTerm = "";
 
 
 /* =========================================================
@@ -100,17 +100,17 @@ const themeButton =
 
 document.addEventListener(
     "DOMContentLoaded",
-    () => {
+    function () {
 
         initializeTheme();
-
-        loadNews();
 
         setupSearch();
 
         setupFilters();
 
         setupTheme();
+
+        loadNews();
 
     }
 );
@@ -127,65 +127,147 @@ async function loadNews() {
     try {
 
         const indiaNews =
-            await fetchFeeds(indiaFeeds, "India");
+            await fetchFeeds(
+                indiaFeeds,
+                "India"
+            );
+
 
         const globalNews =
-            await fetchFeeds(globalFeeds, "Global");
+            await fetchFeeds(
+                globalFeeds,
+                "Global"
+            );
+
+
+        /* =========================================
+           COMBINE NEWS
+        ========================================= */
 
         allNews = [
             ...indiaNews,
             ...globalNews
         ];
 
+
+        /* =========================================
+           REMOVE DUPLICATES
+        ========================================= */
+
         allNews =
-            removeDuplicates(allNews);
+            removeDuplicates(
+                allNews
+            );
+
+
+        /* =========================================
+           IMPORTANT:
+           ONLY KEEP FINANCIAL NEWS
+        ========================================= */
+
+        allNews =
+            allNews.filter(
+                news =>
+                    isFinancialNews(news)
+            );
+
+
+        /* =========================================
+           ANALYZE NEWS
+        ========================================= */
 
         allNews =
             allNews.map(
                 news => {
 
+                    const text =
+                        news.title +
+                        " " +
+                        news.description;
+
+
+                    const sentiment =
+                        detectSentiment(
+                            text
+                        );
+
+
+                    const industry =
+                        detectIndustry(
+                            text
+                        );
+
+
+                    const market =
+                        detectMarket(
+                            text
+                        );
+
+
                     return {
+
                         ...news,
 
                         sentiment:
-                            detectSentiment(
-                                news.title +
-                                " " +
-                                news.description
-                            ),
+                            sentiment,
 
                         industry:
-                            detectIndustry(
-                                news.title +
-                                " " +
-                                news.description
-                            ),
+                            industry,
 
                         market:
-                            detectMarket(
-                                news.title +
-                                " " +
-                                news.description
-                            ),
+                            market,
 
                         analysis:
-                            generateNewsAnalysis(news)
+                            generateNewsAnalysis({
+
+                                ...news,
+
+                                sentiment:
+                                    sentiment,
+
+                                industry:
+                                    industry,
+
+                                market:
+                                    market
+
+                            })
 
                     };
 
                 }
             );
 
+
+        /* =========================================
+           SORT NEWEST FIRST
+        ========================================= */
+
+        allNews.sort(
+            function (a, b) {
+
+                return b.timestamp -
+                    a.timestamp;
+
+            }
+        );
+
+
+        /* =========================================
+           UPDATE DASHBOARD
+        ========================================= */
+
         updateDashboard();
 
         renderNews();
+
 
     }
 
     catch (error) {
 
         console.error(
-            "News loading error:",
+            "FinPulse news loading error:",
             error
         );
 
@@ -207,6 +289,7 @@ async function fetchFeeds(
 
     const results = [];
 
+
     for (
         const feed of feeds
     ) {
@@ -221,23 +304,44 @@ async function fetchFeeds(
                     )
                 );
 
+
             if (
                 !response.ok
             ) {
+
+                console.warn(
+                    "Feed unavailable:",
+                    feed.name
+                );
+
                 continue;
+
             }
+
 
             const data =
                 await response.json();
 
+
             if (
                 !data.items
             ) {
+
                 continue;
+
             }
 
+
             data.items.forEach(
-                item => {
+                function (item) {
+
+                    const date =
+                        item.pubDate
+                            ? new Date(
+                                item.pubDate
+                            )
+                            : new Date();
+
 
                     results.push({
 
@@ -266,21 +370,20 @@ async function fetchFeeds(
                             item.pubDate,
 
                         timestamp:
-                            new Date(
-                                item.pubDate
-                            ).getTime()
+                            date.getTime()
 
                     });
 
                 }
             );
 
+
         }
 
         catch (error) {
 
             console.warn(
-                `Could not load ${feed.name}`,
+                `Could not load ${feed.name}:`,
                 error
             );
 
@@ -288,32 +391,549 @@ async function fetchFeeds(
 
     }
 
+
     return results;
 
 }
 
 
 /* =========================================================
-   CLEAN TEXT
+   FINANCIAL NEWS RELEVANCE FILTER
 ========================================================= */
 
-function cleanText(text) {
+function isFinancialNews(news) {
 
-    if (!text) {
-        return "";
-    }
+    const text = (
+        news.title +
+        " " +
+        news.description
+    ).toLowerCase();
 
-    const temporary =
-        document.createElement(
-            "div"
+
+    /* =====================================================
+       FINANCE
+    ===================================================== */
+
+    const financeKeywords = [
+
+        "bank",
+        "banking",
+        "nbfc",
+        "loan",
+        "loans",
+        "credit",
+        "lending",
+        "borrower",
+        "borrowing",
+        "mortgage",
+        "insurance",
+        "insurer",
+        "mutual fund",
+        "mutual funds",
+        "investment",
+        "investments",
+        "investor",
+        "investors",
+        "funding",
+        "private equity",
+        "venture capital",
+        "asset management",
+        "wealth management",
+        "financial services",
+        "finance company",
+        "financial institution"
+
+    ];
+
+
+    /* =====================================================
+       STOCK MARKET
+    ===================================================== */
+
+    const stockMarketKeywords = [
+
+        "stock",
+        "stocks",
+        "share",
+        "shares",
+        "stock market",
+        "equity",
+        "equities",
+        "nifty",
+        "sensex",
+        "ipo",
+        "ipos",
+        "listing",
+        "listed company",
+        "listed companies",
+        "dividend",
+        "dividends",
+        "buyback",
+        "buyback plan",
+        "earnings",
+        "quarterly results",
+        "annual results",
+        "profit",
+        "profits",
+        "revenue",
+        "ebitda",
+        "valuation",
+        "market cap",
+        "market capitalization",
+        "analyst",
+        "analysts",
+        "upgrade",
+        "upgrades",
+        "downgrade",
+        "downgrades",
+        "brokerage",
+        "target price",
+        "share price",
+        "shareholders",
+        "shareholder"
+
+    ];
+
+
+    /* =====================================================
+       ECONOMY
+    ===================================================== */
+
+    const economyKeywords = [
+
+        "economy",
+        "economic",
+        "gdp",
+        "inflation",
+        "deflation",
+        "interest rate",
+        "interest rates",
+        "rbi",
+        "reserve bank",
+        "federal reserve",
+        "fed",
+        "central bank",
+        "monetary policy",
+        "fiscal policy",
+        "budget",
+        "union budget",
+        "tax",
+        "taxes",
+        "taxation",
+        "gst",
+        "employment",
+        "unemployment",
+        "jobs",
+        "economic growth",
+        "growth outlook",
+        "trade",
+        "exports",
+        "imports",
+        "currency",
+        "rupee",
+        "dollar",
+        "forex",
+        "foreign exchange",
+        "economic data",
+        "consumer spending",
+        "consumer confidence",
+        "manufacturing data",
+        "industrial production"
+
+    ];
+
+
+    /* =====================================================
+       BUSINESS / CORPORATE
+    ===================================================== */
+
+    const businessKeywords = [
+
+        "company",
+        "companies",
+        "corporate",
+        "business",
+        "businesses",
+        "merger",
+        "mergers",
+        "acquisition",
+        "acquisitions",
+        "acquires",
+        "takeover",
+        "partnership",
+        "expansion",
+        "capacity expansion",
+        "capital expenditure",
+        "capex",
+        "factory",
+        "plant",
+        "manufacturing",
+        "revenue",
+        "profit",
+        "loss",
+        "cost",
+        "costs",
+        "margin",
+        "margins",
+        "sales",
+        "demand",
+        "supply chain",
+        "corporate debt",
+        "debt",
+        "cash flow",
+        "investment plan",
+        "business outlook"
+
+    ];
+
+
+    /* =====================================================
+       TECHNOLOGY WITH FINANCIAL IMPACT
+    ===================================================== */
+
+    const technologyKeywords = [
+
+        "artificial intelligence",
+        "artificial-intelligence",
+        "ai",
+        "fintech",
+        "financial technology",
+        "technology company",
+        "technology companies",
+        "software company",
+        "software companies",
+        "semiconductor",
+        "semiconductors",
+        "chip",
+        "chips",
+        "cloud computing",
+        "cloud",
+        "data center",
+        "data centres",
+        "cybersecurity",
+        "digital payments",
+        "digital payment",
+        "upi",
+        "automation",
+        "technology investment",
+        "tech investment",
+        "ai investment",
+        "ai spending",
+        "technology spending"
+
+    ];
+
+
+    /* =====================================================
+       COMMODITIES WITH FINANCIAL IMPACT
+    ===================================================== */
+
+    const commodityKeywords = [
+
+        "crude oil",
+        "oil prices",
+        "oil price",
+        "natural gas",
+        "gold price",
+        "gold prices",
+        "commodity",
+        "commodities",
+        "steel prices",
+        "copper prices",
+        "aluminium prices",
+        "aluminum prices"
+
+    ];
+
+
+    /* =====================================================
+       FINANCIAL REGULATION
+    ===================================================== */
+
+    const regulationKeywords = [
+
+        "sebi",
+        "rbi",
+        "regulator",
+        "regulators",
+        "regulation",
+        "regulations",
+        "regulatory",
+        "compliance",
+        "financial regulation",
+        "market regulation",
+        "government policy",
+        "economic policy",
+        "policy change"
+
+    ];
+
+
+    /* =====================================================
+       CLEARLY IRRELEVANT TOPICS
+    ===================================================== */
+
+    const irrelevantKeywords = [
+
+        "fashion",
+        "fashion week",
+        "designer",
+        "celebrity",
+        "celebrities",
+        "bollywood",
+        "hollywood",
+        "movie review",
+        "film review",
+        "film release",
+        "music",
+        "concert",
+        "football",
+        "cricket",
+        "ipl",
+        "sports",
+        "match result",
+        "recipe",
+        "restaurant",
+        "travel destination",
+        "vacation",
+        "horoscope",
+        "relationship",
+        "wedding",
+        "red carpet",
+        "beauty tips",
+        "lifestyle",
+        "entertainment"
+
+    ];
+
+
+    /* =====================================================
+       CALCULATE FINANCIAL SCORE
+    ===================================================== */
+
+    let financialScore = 0;
+
+
+    const allFinancialKeywords = [
+
+        ...financeKeywords,
+
+        ...stockMarketKeywords,
+
+        ...economyKeywords,
+
+        ...businessKeywords,
+
+        ...technologyKeywords,
+
+        ...commodityKeywords,
+
+        ...regulationKeywords
+
+    ];
+
+
+    allFinancialKeywords.forEach(
+        function (keyword) {
+
+            if (
+                text.includes(
+                    keyword
+                )
+            ) {
+
+                financialScore++;
+
+            }
+
+        }
+    );
+
+
+    /* =====================================================
+       IRRELEVANT SCORE
+    ===================================================== */
+
+    let irrelevantScore = 0;
+
+
+    irrelevantKeywords.forEach(
+        function (keyword) {
+
+            if (
+                text.includes(
+                    keyword
+                )
+            ) {
+
+                irrelevantScore++;
+
+            }
+
+        }
+    );
+
+
+    /* =====================================================
+       STRONG FINANCIAL SIGNALS
+    ===================================================== */
+
+    const strongFinancialKeywords = [
+
+        "rbi",
+        "sebi",
+        "nifty",
+        "sensex",
+        "stock market",
+        "interest rate",
+        "interest rates",
+        "gdp",
+        "inflation",
+        "ipo",
+        "quarterly results",
+        "earnings",
+        "dividend",
+        "merger",
+        "acquisition",
+        "mutual fund",
+        "federal reserve",
+        "monetary policy",
+        "fiscal policy",
+        "market cap",
+        "share price",
+        "target price",
+        "economic growth",
+        "economic data"
+
+    ];
+
+
+    const hasStrongFinancialSignal =
+        strongFinancialKeywords.some(
+            function (keyword) {
+
+                return text.includes(
+                    keyword
+                );
+
+            }
         );
 
-    temporary.innerHTML =
-        text;
 
-    return temporary.textContent
-        .replace(/\s+/g, " ")
-        .trim();
+    /* =====================================================
+       REJECT CLEARLY IRRELEVANT ARTICLES
+    ===================================================== */
+
+    if (
+        irrelevantScore > 0 &&
+        !hasStrongFinancialSignal
+    ) {
+
+        return false;
+
+    }
+
+
+    /* =====================================================
+       STRONG FINANCIAL ARTICLE
+    ===================================================== */
+
+    if (
+        hasStrongFinancialSignal
+    ) {
+
+        return true;
+
+    }
+
+
+    /* =====================================================
+       TECHNOLOGY SPECIAL CASE
+       
+       Technology should ONLY be included if
+       there is a financial/business connection.
+    ===================================================== */
+
+    const hasTechnology =
+        technologyKeywords.some(
+            function (keyword) {
+
+                return text.includes(
+                    keyword
+                );
+
+            }
+        );
+
+
+    const technologyFinancialSignals = [
+
+        "revenue",
+        "profit",
+        "earnings",
+        "investment",
+        "funding",
+        "valuation",
+        "shares",
+        "stock",
+        "market",
+        "company",
+        "companies",
+        "business",
+        "cost",
+        "sales",
+        "growth",
+        "spending",
+        "capex",
+        "acquisition",
+        "merger"
+
+    ];
+
+
+    if (
+        hasTechnology
+    ) {
+
+        const hasFinancialTechnologySignal =
+            technologyFinancialSignals.some(
+                function (keyword) {
+
+                    return text.includes(
+                        keyword
+                    );
+
+                }
+            );
+
+
+        if (
+            hasFinancialTechnologySignal
+        ) {
+
+            return true;
+
+        }
+
+    }
+
+
+    /* =====================================================
+       NORMAL FINANCIAL ARTICLE
+       
+       Require at least TWO financial signals.
+    ===================================================== */
+
+    if (
+        financialScore >= 2
+    ) {
+
+        return true;
+
+    }
+
+
+    return false;
 
 }
 
@@ -322,13 +942,16 @@ function cleanText(text) {
    REMOVE DUPLICATES
 ========================================================= */
 
-function removeDuplicates(news) {
+function removeDuplicates(
+    news
+) {
 
     const seen =
         new Set();
 
+
     return news.filter(
-        item => {
+        function (item) {
 
             const key =
                 item.title
@@ -338,11 +961,15 @@ function removeDuplicates(news) {
                         ""
                     );
 
+
             if (
                 seen.has(key)
             ) {
+
                 return false;
+
             }
+
 
             seen.add(key);
 
@@ -355,10 +982,49 @@ function removeDuplicates(news) {
 
 
 /* =========================================================
+   CLEAN TEXT
+========================================================= */
+
+function cleanText(
+    text
+) {
+
+    if (
+        !text
+    ) {
+
+        return "";
+
+    }
+
+
+    const temporary =
+        document.createElement(
+            "div"
+        );
+
+
+    temporary.innerHTML =
+        text;
+
+
+    return temporary.textContent
+        .replace(
+            /\s+/g,
+            " "
+        )
+        .trim();
+
+}
+
+
+/* =========================================================
    SENTIMENT DETECTION
 ========================================================= */
 
-function detectSentiment(text) {
+function detectSentiment(
+    text
+) {
 
     const content =
         text.toLowerCase();
@@ -383,6 +1049,7 @@ function detectSentiment(text) {
         "rises",
         "raised",
         "upgrade",
+        "upgraded",
         "upbeat",
         "expansion",
         "recovery",
@@ -393,7 +1060,10 @@ function detectSentiment(text) {
         "investment",
         "deal",
         "partnership",
-        "acquisition"
+        "acquisition",
+        "beat",
+        "beats",
+        "outperform"
 
     ];
 
@@ -415,6 +1085,7 @@ function detectSentiment(text) {
         "risk",
         "risks",
         "downgrade",
+        "downgraded",
         "cut",
         "cuts",
         "slump",
@@ -427,20 +1098,22 @@ function detectSentiment(text) {
         "shutdown",
         "delay",
         "delayed",
-        "concern"
+        "concern",
+        "concerns",
+        "miss",
+        "misses",
+        "underperform"
 
     ];
 
 
-    let bullishScore =
-        0;
+    let bullishScore = 0;
 
-    let bearishScore =
-        0;
+    let bearishScore = 0;
 
 
     bullishWords.forEach(
-        word => {
+        function (word) {
 
             if (
                 content.includes(
@@ -457,7 +1130,7 @@ function detectSentiment(text) {
 
 
     bearishWords.forEach(
-        word => {
+        function (word) {
 
             if (
                 content.includes(
@@ -502,7 +1175,9 @@ function detectSentiment(text) {
    INDUSTRY DETECTION
 ========================================================= */
 
-function detectIndustry(text) {
+function detectIndustry(
+    text
+) {
 
     const content =
         text.toLowerCase();
@@ -511,6 +1186,7 @@ function detectIndustry(text) {
     const industries = {
 
         "Banking & Finance": [
+
             "bank",
             "banking",
             "loan",
@@ -518,10 +1194,15 @@ function detectIndustry(text) {
             "nbfc",
             "rbi",
             "interest rate",
-            "financial"
+            "financial",
+            "insurance",
+            "mutual fund"
+
         ],
 
+
         "Technology": [
+
             "technology",
             "software",
             "it services",
@@ -529,10 +1210,15 @@ function detectIndustry(text) {
             "ai",
             "cloud",
             "semiconductor",
-            "chip"
+            "chip",
+            "fintech",
+            "digital payments"
+
         ],
 
+
         "Automobile": [
+
             "automobile",
             "automotive",
             "car",
@@ -540,19 +1226,26 @@ function detectIndustry(text) {
             "ev",
             "electric vehicle",
             "two-wheeler",
-            "truck"
+            "truck",
+            "passenger vehicle"
+
         ],
 
+
         "Pharmaceuticals": [
+
             "pharma",
             "pharmaceutical",
             "drug",
             "medicine",
             "healthcare",
             "fda"
+
         ],
 
+
         "Energy": [
+
             "oil",
             "gas",
             "energy",
@@ -560,48 +1253,66 @@ function detectIndustry(text) {
             "renewable",
             "power",
             "electricity"
+
         ],
 
+
         "FMCG": [
+
             "fmcg",
             "consumer goods",
             "food",
             "beverage",
             "personal care",
             "household"
+
         ],
 
+
         "Telecom": [
+
             "telecom",
             "5g",
             "mobile network",
             "jio",
             "airtel",
             "vodafone"
+
         ],
 
+
         "Real Estate": [
+
             "real estate",
             "property",
             "housing",
             "residential",
             "commercial property"
+
         ],
 
+
         "Metals & Mining": [
+
             "steel",
             "aluminium",
+            "aluminum",
             "metal",
             "mining",
             "iron ore",
             "copper"
+
         ],
 
+
         "Retail": [
+
             "retail",
             "e-commerce",
+            "ecommerce",
             "shopping",
             "consumer spending"
+
         ]
 
     };
@@ -610,33 +1321,32 @@ function detectIndustry(text) {
     let bestIndustry =
         "General Market";
 
-    let bestScore =
-        0;
+
+    let bestScore = 0;
 
 
     for (
         const industry in industries
     ) {
 
-        let score =
-            0;
+        let score = 0;
 
-        industries[industry]
-            .forEach(
-                keyword => {
 
-                    if (
-                        content.includes(
-                            keyword
-                        )
-                    ) {
+        industries[industry].forEach(
+            function (keyword) {
 
-                        score++;
+                if (
+                    content.includes(
+                        keyword
+                    )
+                ) {
 
-                    }
+                    score++;
 
                 }
-            );
+
+            }
+        );
 
 
         if (
@@ -664,7 +1374,9 @@ function detectIndustry(text) {
    MARKET DETECTION
 ========================================================= */
 
-function detectMarket(text) {
+function detectMarket(
+    text
+) {
 
     const content =
         text.toLowerCase();
@@ -681,20 +1393,21 @@ function detectMarket(text) {
         "rbi",
         "sebi",
         "rupee",
-        "₹",
         "inr",
+        "₹",
         "mumbai",
-        "delhi"
+        "delhi",
+        "gst",
+        "union budget"
 
     ];
 
 
-    let indiaScore =
-        0;
+    let indiaScore = 0;
 
 
     indiaKeywords.forEach(
-        keyword => {
+        function (keyword) {
 
             if (
                 content.includes(
@@ -725,17 +1438,18 @@ function detectMarket(text) {
 
 
 /* =========================================================
-   GENERATE NEWS-SPECIFIC ANALYSIS
+   GENERATE NEWS ANALYSIS
 ========================================================= */
 
-function generateNewsAnalysis(news) {
+function generateNewsAnalysis(
+    news
+) {
 
-    const text =
-        (
-            news.title +
-            " " +
-            news.description
-        ).toLowerCase();
+    const text = (
+        news.title +
+        " " +
+        news.description
+    ).toLowerCase();
 
 
     const company =
@@ -814,7 +1528,9 @@ function generateNewsAnalysis(news) {
    COMPANY / STOCK EXTRACTION
 ========================================================= */
 
-function extractCompany(text) {
+function extractCompany(
+    text
+) {
 
     const knownCompanies = [
 
@@ -867,11 +1583,15 @@ function extractCompany(text) {
 
     const found =
         knownCompanies.find(
-            company =>
-                text.toLowerCase()
+            function (company) {
+
+                return text
+                    .toLowerCase()
                     .includes(
                         company.toLowerCase()
-                    )
+                    );
+
+            }
         );
 
 
@@ -884,7 +1604,7 @@ function extractCompany(text) {
     }
 
 
-    return "The companies directly mentioned in this news";
+    return "No specific company identified";
 
 }
 
@@ -909,7 +1629,8 @@ function simplifyNews(
 
 
     if (
-        sentiment === "bullish"
+        sentiment ===
+        "bullish"
     ) {
 
         direction =
@@ -918,7 +1639,8 @@ function simplifyNews(
     }
 
     else if (
-        sentiment === "bearish"
+        sentiment ===
+        "bearish"
     ) {
 
         direction =
@@ -929,15 +1651,31 @@ function simplifyNews(
 
     if (
         company !==
-        "The companies directly mentioned in this news"
+        "No specific company identified"
     ) {
 
-        return `${title}. In simple terms, this news is mainly about ${company}. The development is currently showing a ${direction} signal and may affect the company's business, earnings, valuation or investor expectations depending on how significant the development becomes.`;
+        return (
+            `${title}. ` +
+            `In simple terms, this news is mainly about ` +
+            `${company}. ` +
+            `The development is currently showing a ` +
+            `${direction} signal. ` +
+            `For an investor, the important question is ` +
+            `whether this development can change the ` +
+            `company's earnings, costs, growth or future expectations.`
+        );
 
     }
 
 
-    return `${title}. In simple terms, the news describes a ${direction} development related to the ${industry} sector. Its importance depends on whether the development changes company earnings, costs, demand, regulation or investor expectations.`;
+    return (
+        `${title}. ` +
+        `In simple terms, this is a ${direction} ` +
+        `development related to the ${industry} industry. ` +
+        `The main thing to watch is whether it changes ` +
+        `business performance, costs, demand, regulation ` +
+        `or investor expectations.`
+    );
 
 }
 
@@ -1014,19 +1752,31 @@ function determineImpact(
     ) {
 
         impacts.push(
-            "input costs and margins"
+            "input costs and profit margins"
         );
 
     }
 
 
     if (
-        impacts.length ===
-        0
+        text.includes("demand") ||
+        text.includes("sales")
+    ) {
+
+        impacts.push(
+            "customer demand and sales"
+        );
+
+    }
+
+
+    if (
+        impacts.length === 0
     ) {
 
         if (
-            sentiment === "bullish"
+            sentiment ===
+            "bullish"
         ) {
 
             impacts.push(
@@ -1036,7 +1786,8 @@ function determineImpact(
         }
 
         else if (
-            sentiment === "bearish"
+            sentiment ===
+            "bearish"
         ) {
 
             impacts.push(
@@ -1056,19 +1807,50 @@ function determineImpact(
     }
 
 
-    const current =
-        sentiment === "bullish"
-            ? "The immediate impact is likely to be positive if investors see the development as beneficial."
-            : sentiment === "bearish"
-                ? "The immediate impact could be negative if the development increases risk, costs or uncertainty."
-                : "The immediate market impact may remain limited until more information becomes available.";
+    let currentImpact;
 
 
-    const future =
-        "The longer-term impact will depend on whether the development actually changes earnings, demand, costs, regulation or future growth.";
+    if (
+        sentiment ===
+        "bullish"
+    ) {
+
+        currentImpact =
+            "The immediate signal is positive if investors interpret the development as beneficial.";
+
+    }
+
+    else if (
+        sentiment ===
+        "bearish"
+    ) {
+
+        currentImpact =
+            "The immediate signal is negative if the development increases risk, costs or uncertainty.";
+
+    }
+
+    else {
+
+        currentImpact =
+            "The immediate market impact may remain limited until investors receive more information.";
+
+    }
 
 
-    return `${current} It is particularly relevant to ${impacts.join(", ")}. ${future}`;
+    const futureImpact =
+        "The longer-term effect will depend on whether this development actually changes earnings, demand, costs, regulation or future growth.";
+
+
+    return (
+        currentImpact +
+        " It is particularly relevant to " +
+        impacts.join(
+            ", "
+        ) +
+        ". " +
+        futureImpact
+    );
 
 }
 
@@ -1077,7 +1859,9 @@ function determineImpact(
    TIMING
 ========================================================= */
 
-function determineTiming(text) {
+function determineTiming(
+    text
+) {
 
     if (
         text.includes("today") ||
@@ -1087,7 +1871,12 @@ function determineTiming(text) {
         text.includes("shares")
     ) {
 
-        return "Investors can react immediately because the information is already public. The share price may reflect expectations before the company's actual financial results change.";
+        return (
+            "Investors can react immediately because " +
+            "the information is already public. " +
+            "The share price can reflect expectations " +
+            "before the company's actual financial results change."
+        );
 
     }
 
@@ -1098,7 +1887,10 @@ function determineTiming(text) {
         text.includes("results")
     ) {
 
-        return "The effect may become clearer when the company reports its next quarterly results.";
+        return (
+            "The effect may become clearer when the company " +
+            "reports its next quarterly results."
+        );
 
     }
 
@@ -1110,7 +1902,11 @@ function determineTiming(text) {
         text.includes("capacity")
     ) {
 
-        return "The market may react now based on expectations, while the actual business impact may take several months or years as the investment or expansion takes place.";
+        return (
+            "The market may react now based on expectations, " +
+            "while the actual business impact may take several " +
+            "months or years as the investment or expansion takes place."
+        );
 
     }
 
@@ -1121,12 +1917,20 @@ function determineTiming(text) {
         text.includes("regulation")
     ) {
 
-        return "The immediate reaction depends on investor expectations. The actual business impact becomes clearer once the policy or regulation is implemented.";
+        return (
+            "The immediate reaction depends on investor expectations. " +
+            "The actual business impact becomes clearer once the policy " +
+            "or regulation is implemented."
+        );
 
     }
 
 
-    return "The market can react once investors interpret the information, while the actual business impact may take time to appear in sales, costs or earnings.";
+    return (
+        "The market can react once investors interpret the information, " +
+        "while the actual business impact may take time to appear in " +
+        "sales, costs or earnings."
+    );
 
 }
 
@@ -1147,7 +1951,8 @@ function determineAffectedParties(
         text.includes("investor") ||
         text.includes("shares") ||
         text.includes("stock") ||
-        text.includes("market")
+        text.includes("market") ||
+        text.includes("shareholder")
     ) {
 
         affected.push(
@@ -1209,8 +2014,7 @@ function determineAffectedParties(
 
 
     if (
-        affected.length ===
-        0
+        affected.length === 0
     ) {
 
         affected.push(
@@ -1222,9 +2026,12 @@ function determineAffectedParties(
     }
 
 
-    return affected.join(
-        ", "
-    ) + ".";
+    return (
+        affected.join(
+            ", "
+        ) +
+        "."
+    );
 
 }
 
@@ -1238,7 +2045,9 @@ function renderNews() {
     if (
         !newsContainer
     ) {
+
         return;
+
     }
 
 
@@ -1246,7 +2055,9 @@ function renderNews() {
         [...allNews];
 
 
-    /* MARKET FILTER */
+    /* =========================================
+       MARKET FILTER
+    ========================================= */
 
     if (
         currentMarket !==
@@ -1255,15 +2066,20 @@ function renderNews() {
 
         filteredNews =
             filteredNews.filter(
-                news =>
-                    news.market ===
-                    currentMarket
+                function (news) {
+
+                    return news.market ===
+                        currentMarket;
+
+                }
             );
 
     }
 
 
-    /* INDUSTRY FILTER */
+    /* =========================================
+       INDUSTRY FILTER
+    ========================================= */
 
     if (
         currentIndustry !==
@@ -1272,15 +2088,20 @@ function renderNews() {
 
         filteredNews =
             filteredNews.filter(
-                news =>
-                    news.industry ===
-                    currentIndustry
+                function (news) {
+
+                    return news.industry ===
+                        currentIndustry;
+
+                }
             );
 
     }
 
 
-    /* SENTIMENT FILTER */
+    /* =========================================
+       SENTIMENT FILTER
+    ========================================= */
 
     if (
         currentSentiment !==
@@ -1289,15 +2110,20 @@ function renderNews() {
 
         filteredNews =
             filteredNews.filter(
-                news =>
-                    news.sentiment ===
-                    currentSentiment
+                function (news) {
+
+                    return news.sentiment ===
+                        currentSentiment;
+
+                }
             );
 
     }
 
 
-    /* SEARCH */
+    /* =========================================
+       SEARCH
+    ========================================= */
 
     if (
         searchTerm
@@ -1305,7 +2131,7 @@ function renderNews() {
 
         filteredNews =
             filteredNews.filter(
-                news => {
+                function (news) {
 
                     const combined =
                         (
@@ -1327,39 +2153,49 @@ function renderNews() {
     }
 
 
-    /* SORT BY DATE */
+    /* =========================================
+       SORT
+    ========================================= */
 
     filteredNews.sort(
-        (a, b) =>
-            b.timestamp -
-            a.timestamp
+        function (a, b) {
+
+            return b.timestamp -
+                a.timestamp;
+
+        }
     );
 
 
-    /* RESULTS */
+    /* =========================================
+       RESULTS INFO
+    ========================================= */
 
     if (
         resultsInfo
     ) {
 
         resultsInfo.textContent =
-            `${filteredNews.length} news stories found`;
+            `${filteredNews.length} financial news stories found`;
 
     }
 
 
-    /* EMPTY STATE */
+    /* =========================================
+       EMPTY STATE
+    ========================================= */
 
     if (
-        filteredNews.length ===
-        0
+        filteredNews.length === 0
     ) {
 
         newsContainer.innerHTML = `
 
             <div class="empty-state">
 
-                <h3>No news found</h3>
+                <h3>
+                    No financial news found
+                </h3>
 
                 <p>
                     Try changing your search
@@ -1375,7 +2211,9 @@ function renderNews() {
     }
 
 
-    /* LIMIT */
+    /* =========================================
+       DISPLAY MAXIMUM 50
+    ========================================= */
 
     const displayNews =
         filteredNews.slice(
@@ -1387,7 +2225,14 @@ function renderNews() {
     newsContainer.innerHTML =
         displayNews
             .map(
-                createNewsCard
+                function (news, index) {
+
+                    return createNewsCard(
+                        news,
+                        index
+                    );
+
+                }
             )
             .join("");
 
@@ -1408,9 +2253,11 @@ function createNewsCard(
 
 
     const sentimentText =
-        news.sentiment === "bullish"
+        news.sentiment ===
+            "bullish"
             ? "BULLISH"
-            : news.sentiment === "bearish"
+            : news.sentiment ===
+                "bearish"
                 ? "BEARISH"
                 : "NEUTRAL";
 
@@ -1437,11 +2284,15 @@ function createNewsCard(
                 <div class="news-meta">
 
                     <span class="news-source">
-                        ${escapeHTML(news.source)}
+                        ${escapeHTML(
+                            news.source
+                        )}
                     </span>
 
                     <span class="news-industry">
-                        ${escapeHTML(news.industry)}
+                        ${escapeHTML(
+                            news.industry
+                        )}
                     </span>
 
                 </div>
@@ -1457,7 +2308,9 @@ function createNewsCard(
 
 
             <h3>
-                ${escapeHTML(news.title)}
+                ${escapeHTML(
+                    news.title
+                )}
             </h3>
 
 
@@ -1473,6 +2326,16 @@ function createNewsCard(
 
 
             <div class="news-bottom">
+
+                <span
+                    style="
+                        color:var(--muted);
+                        font-size:11px;
+                    "
+                >
+                    ${formattedDate}
+                </span>
+
 
                 <a
                     class="read-link"
@@ -1500,7 +2363,9 @@ function createNewsCard(
             >
 
                 <div class="analysis-title">
+
                     🧠 Understand This News
+
                 </div>
 
 
@@ -1619,16 +2484,24 @@ function toggleAnalysis(
     if (
         !analysis
     ) {
+
         return;
+
     }
 
 
+    const card =
+        analysis.closest(
+            ".news-card"
+        );
+
+
     const button =
-        analysis
-            .closest(".news-card")
-            ?.querySelector(
+        card
+            ? card.querySelector(
                 ".explain-btn"
-            );
+            )
+            : null;
 
 
     const isOpen =
@@ -1637,8 +2510,6 @@ function toggleAnalysis(
         );
 
 
-    /* Close */
-
     if (
         isOpen
     ) {
@@ -1646,6 +2517,7 @@ function toggleAnalysis(
         analysis.classList.remove(
             "show"
         );
+
 
         if (
             button
@@ -1656,12 +2528,11 @@ function toggleAnalysis(
 
         }
 
+
         return;
 
     }
 
-
-    /* Open */
 
     analysis.classList.add(
         "show"
@@ -1689,13 +2560,15 @@ function setupSearch() {
     if (
         !searchInput
     ) {
+
         return;
+
     }
 
 
     searchInput.addEventListener(
         "input",
-        event => {
+        function (event) {
 
             searchTerm =
                 event.target.value
@@ -1719,17 +2592,20 @@ function setupFilters() {
 
 
     filterButtons.forEach(
-        button => {
+        function (button) {
 
             button.addEventListener(
                 "click",
-                () => {
+                function () {
 
                     filterButtons.forEach(
-                        btn =>
+                        function (btn) {
+
                             btn.classList.remove(
                                 "active"
-                            )
+                            );
+
+                        }
                     );
 
 
@@ -1754,17 +2630,20 @@ function setupFilters() {
 
 
     sentimentButtons.forEach(
-        button => {
+        function (button) {
 
             button.addEventListener(
                 "click",
-                () => {
+                function () {
 
                     sentimentButtons.forEach(
-                        btn =>
+                        function (btn) {
+
                             btn.classList.remove(
                                 "active"
-                            )
+                            );
+
+                        }
                     );
 
 
@@ -1790,7 +2669,7 @@ function setupFilters() {
 
 
 /* =========================================================
-   DASHBOARD
+   DASHBOARD UPDATE
 ========================================================= */
 
 function updateDashboard() {
@@ -1800,14 +2679,18 @@ function updateDashboard() {
         "India"
     );
 
+
     updateMarketGauge(
         "global",
         "Global"
     );
 
+
     updateSentimentBreakdown();
 
+
     updateSectorBreakdown();
+
 
     updateDate();
 
@@ -1815,7 +2698,7 @@ function updateDashboard() {
 
 
 /* =========================================================
-   MARKET GAUGE
+   MARKET SENTIMENT GAUGE
 ========================================================= */
 
 function updateMarketGauge(
@@ -1825,32 +2708,33 @@ function updateMarketGauge(
 
     const news =
         allNews.filter(
-            item =>
-                item.market ===
-                market
+            function (item) {
+
+                return item.market ===
+                    market;
+
+            }
         );
 
 
     if (
-        news.length ===
-        0
+        news.length === 0
     ) {
+
         return;
+
     }
 
 
-    let bullish =
-        0;
+    let bullish = 0;
 
-    let bearish =
-        0;
+    let bearish = 0;
 
-    let neutral =
-        0;
+    let neutral = 0;
 
 
     news.forEach(
-        item => {
+        function (item) {
 
             if (
                 item.sentiment ===
@@ -1886,7 +2770,13 @@ function updateMarketGauge(
         neutral;
 
 
-    /* Sentiment score from 0 to 100 */
+    /* =========================================
+       SCORE: 0 TO 100
+       
+       0   = extremely bearish
+       50  = neutral
+       100 = extremely bullish
+    ========================================= */
 
     const score =
         total === 0
@@ -1958,6 +2848,7 @@ function updateMarketGauge(
             statusElement.textContent =
                 "BULLISH";
 
+
             statusElement.classList.add(
                 "bullish"
             );
@@ -1971,6 +2862,7 @@ function updateMarketGauge(
             statusElement.textContent =
                 "BEARISH";
 
+
             statusElement.classList.add(
                 "bearish"
             );
@@ -1981,6 +2873,7 @@ function updateMarketGauge(
 
             statusElement.textContent =
                 "NEUTRAL";
+
 
             statusElement.classList.add(
                 "neutral"
@@ -2006,7 +2899,7 @@ function updateMarketGauge(
         ) {
 
             description.textContent =
-                `News sentiment is currently leaning positive, with more bullish stories than bearish ones.`;
+                "Financial news is currently leaning positive.";
 
         }
 
@@ -2015,14 +2908,14 @@ function updateMarketGauge(
         ) {
 
             description.textContent =
-                `News sentiment is currently leaning negative, with more bearish stories than bullish ones.`;
+                "Financial news is currently leaning negative.";
 
         }
 
         else {
 
             description.textContent =
-                `News sentiment is relatively balanced, with no strong bullish or bearish direction.`;
+                "Financial news is currently relatively balanced.";
 
         }
 
@@ -2055,10 +2948,12 @@ function updateMiniStats(
             `${type}Bullish`
         );
 
+
     const neutralElement =
         document.getElementById(
             `${type}Neutral`
         );
+
 
     const bearishElement =
         document.getElementById(
@@ -2111,31 +3006,42 @@ function updateSentimentBreakdown() {
     if (
         total === 0
     ) {
+
         return;
+
     }
 
 
     const bullish =
         allNews.filter(
-            n =>
-                n.sentiment ===
-                "bullish"
+            function (n) {
+
+                return n.sentiment ===
+                    "bullish";
+
+            }
         ).length;
 
 
     const neutral =
         allNews.filter(
-            n =>
-                n.sentiment ===
-                "neutral"
+            function (n) {
+
+                return n.sentiment ===
+                    "neutral";
+
+            }
         ).length;
 
 
     const bearish =
         allNews.filter(
-            n =>
-                n.sentiment ===
-                "bearish"
+            function (n) {
+
+                return n.sentiment ===
+                    "bearish";
+
+            }
         ).length;
 
 
@@ -2168,10 +3074,12 @@ function updateSentimentBreakdown() {
         bullish
     );
 
+
     setText(
         "neutralCount",
         neutral
     );
+
 
     setText(
         "bearishCount",
@@ -2187,15 +3095,15 @@ function updateSentimentBreakdown() {
 
 function updateSectorBreakdown() {
 
-    const sectorCounts =
-        {};
+    const sectorCounts = {};
 
 
     allNews.forEach(
-        news => {
+        function (news) {
 
             const sector =
                 news.industry;
+
 
             sectorCounts[sector] =
                 (
@@ -2212,9 +3120,12 @@ function updateSectorBreakdown() {
             sectorCounts
         )
             .sort(
-                (a, b) =>
-                    b[1] -
-                    a[1]
+                function (a, b) {
+
+                    return b[1] -
+                        a[1];
+
+                }
             )
             .slice(
                 0,
@@ -2231,7 +3142,9 @@ function updateSectorBreakdown() {
     if (
         !container
     ) {
+
         return;
+
     }
 
 
@@ -2244,39 +3157,47 @@ function updateSectorBreakdown() {
     container.innerHTML =
         sorted
             .map(
-                ([sector, count]) => `
+                function ([sector, count]) {
 
-                    <div class="sector-row">
+                    return `
 
-                        <div class="sector-top">
+                        <div class="sector-row">
 
-                            <span class="sector-name">
-                                ${escapeHTML(sector)}
-                            </span>
+                            <div class="sector-top">
 
-                            <span class="sector-count">
-                                ${count} stories
-                            </span>
+                                <span class="sector-name">
+                                    ${escapeHTML(
+                                        sector
+                                    )}
+                                </span>
+
+                                <span class="sector-count">
+                                    ${count} stories
+                                </span>
+
+                            </div>
+
+
+                            <div class="sector-bar">
+
+                                <div
+                                    class="sector-bar-fill"
+                                    style="
+                                        width:${(
+                                            count /
+                                            max *
+                                            100
+                                        )}%
+                                    "
+                                ></div>
+
+                            </div>
 
                         </div>
 
+                    `;
 
-                        <div class="sector-bar">
-
-                            <div
-                                class="sector-bar-fill"
-                                style="width:${(
-                                    count /
-                                    max *
-                                    100
-                                )}%"
-                            ></div>
-
-                        </div>
-
-                    </div>
-
-                `
+                }
             )
             .join("");
 
@@ -2298,7 +3219,9 @@ function updateDate() {
     if (
         !dateElement
     ) {
+
         return;
+
     }
 
 
@@ -2310,6 +3233,7 @@ function updateDate() {
         now.toLocaleDateString(
             "en-IN",
             {
+
                 weekday:
                     "long",
 
@@ -2321,6 +3245,7 @@ function updateDate() {
 
                 year:
                     "numeric"
+
             }
         );
 
@@ -2336,13 +3261,15 @@ function setupTheme() {
     if (
         !themeButton
     ) {
+
         return;
+
     }
 
 
     themeButton.addEventListener(
         "click",
-        () => {
+        function () {
 
             document.body.classList.toggle(
                 "light-mode"
@@ -2419,7 +3346,9 @@ function showLoading() {
     if (
         !newsContainer
     ) {
+
         return;
+
     }
 
 
@@ -2449,7 +3378,9 @@ function showError() {
     if (
         !newsContainer
     ) {
+
         return;
+
     }
 
 
@@ -2458,7 +3389,7 @@ function showError() {
         <div class="empty-state">
 
             <h3>
-                Unable to load news
+                Unable to load financial news
             </h3>
 
             <p>
@@ -2570,6 +3501,7 @@ function formatDate(
     return parsed.toLocaleString(
         "en-IN",
         {
+
             day:
                 "numeric",
 
@@ -2581,6 +3513,7 @@ function formatDate(
 
             minute:
                 "2-digit"
+
         }
     );
 
@@ -2682,8 +3615,12 @@ function refreshNews() {
    AUTO REFRESH
 ========================================================= */
 
+/*
+   Refresh financial news every 15 minutes.
+*/
+
 setInterval(
-    () => {
+    function () {
 
         loadNews();
 
