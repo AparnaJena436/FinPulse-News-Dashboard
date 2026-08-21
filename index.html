@@ -1,71 +1,600 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>FinPulse - Financial News Dashboard</title>
+    <title>FinPulse | Financial News Intelligence</title>
 
     <link rel="stylesheet" href="style.css">
+
 </head>
+
 
 <body>
 
-    <header>
-        <h1>📊 FinPulse</h1>
-        <p>Financial News & Market Sentiment Dashboard</p>
-    </header>
+    <!-- =========================
+         NAVBAR
+    ========================== -->
+
+    <nav class="navbar">
+
+        <div class="logo">
+            <span>◈</span> FinPulse
+        </div>
+
+        <div class="nav-right">
+
+            <span class="live-status">
+                <span class="live-dot"></span>
+                LIVE
+            </span>
+
+            <button id="themeToggle" class="theme-btn">
+                ☀️
+            </button>
+
+        </div>
+
+    </nav>
+
+
+
+    <!-- =========================
+         HERO
+    ========================== -->
+
+    <section class="hero">
+
+        <div>
+
+            <p class="eyebrow">
+                FINANCIAL NEWS INTELLIGENCE
+            </p>
+
+            <h1>
+                Understand the market.
+                <span>Not just the news.</span>
+            </h1>
+
+            <p class="hero-description">
+                Track financial news, market sentiment and industry impact
+                in one simple dashboard.
+            </p>
+
+        </div>
+
+        <div class="hero-date" id="currentDate">
+        </div>
+
+    </section>
+
+
 
     <main>
 
-        <!-- Sentiment Section -->
-        <section class="sentiment-section">
 
-            <div class="sentiment-card">
-                <h2>🇮🇳 India Market Sentiment</h2>
-                <div id="indiaSentiment">Loading...</div>
+        <!-- =========================
+             MARKET PULSE
+        ========================== -->
+
+        <section class="section">
+
+            <div class="section-heading">
+
+                <div>
+                    <p class="section-label">MARKET OVERVIEW</p>
+                    <h2>Market Pulse</h2>
+                </div>
+
+                <span class="update-text">
+                    Based on latest financial news
+                </span>
+
             </div>
 
-            <div class="sentiment-card">
-                <h2>🌎 Global Market Sentiment</h2>
-                <div id="globalSentiment">Loading...</div>
+
+            <div class="market-grid">
+
+
+                <!-- INDIA -->
+
+                <div class="market-card">
+
+                    <div class="market-card-top">
+
+                        <div>
+
+                            <span class="market-name">
+                                🇮🇳 India Market
+                            </span>
+
+                            <p>
+                                News Sentiment
+                            </p>
+
+                        </div>
+
+                        <span id="indiaStatus"
+                              class="status-badge neutral">
+                            Neutral
+                        </span>
+
+                    </div>
+
+
+                    <div class="gauge-container">
+
+                        <div class="gauge">
+
+                            <div class="gauge-fill"></div>
+
+                            <div
+                                id="indiaPointer"
+                                class="gauge-pointer">
+                            </div>
+
+                        </div>
+
+                        <div class="gauge-labels">
+
+                            <span>Bearish</span>
+                            <span>Neutral</span>
+                            <span>Bullish</span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="score-display">
+
+                        <strong id="indiaScore">
+                            50
+                        </strong>
+
+                        <span>
+                            / 100
+                        </span>
+
+                    </div>
+
+                    <p id="indiaDescription"
+                       class="market-description">
+                        Loading market sentiment...
+                    </p>
+
+
+                    <div class="mini-stats">
+
+                        <div>
+                            <span>Bullish</span>
+                            <strong id="indiaBullish">
+                                0
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Neutral</span>
+                            <strong id="indiaNeutral">
+                                0
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Bearish</span>
+                            <strong id="indiaBearish">
+                                0
+                            </strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- GLOBAL -->
+
+                <div class="market-card">
+
+                    <div class="market-card-top">
+
+                        <div>
+
+                            <span class="market-name">
+                                🌎 Global Market
+                            </span>
+
+                            <p>
+                                News Sentiment
+                            </p>
+
+                        </div>
+
+                        <span id="globalStatus"
+                              class="status-badge neutral">
+                            Neutral
+                        </span>
+
+                    </div>
+
+
+                    <div class="gauge-container">
+
+                        <div class="gauge">
+
+                            <div class="gauge-fill"></div>
+
+                            <div
+                                id="globalPointer"
+                                class="gauge-pointer">
+                            </div>
+
+                        </div>
+
+                        <div class="gauge-labels">
+
+                            <span>Bearish</span>
+                            <span>Neutral</span>
+                            <span>Bullish</span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="score-display">
+
+                        <strong id="globalScore">
+                            50
+                        </strong>
+
+                        <span>
+                            / 100
+                        </span>
+
+                    </div>
+
+                    <p id="globalDescription"
+                       class="market-description">
+                        Loading market sentiment...
+                    </p>
+
+
+                    <div class="mini-stats">
+
+                        <div>
+                            <span>Bullish</span>
+                            <strong id="globalBullish">
+                                0
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Neutral</span>
+                            <strong id="globalNeutral">
+                                0
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Bearish</span>
+                            <strong id="globalBearish">
+                                0
+                            </strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
             </div>
 
         </section>
 
 
-        <!-- India News -->
-        <section class="news-section">
 
-            <h2>🇮🇳 India Financial News</h2>
+        <!-- =========================
+             DASHBOARD INSIGHTS
+        ========================== -->
 
-            <div id="indiaNews" class="news-container">
-                Loading news...
+        <section class="dashboard-grid">
+
+
+            <!-- NEWS BREAKDOWN -->
+
+            <div class="panel">
+
+                <div class="panel-heading">
+
+                    <div>
+                        <p class="section-label">
+                            SENTIMENT
+                        </p>
+
+                        <h3>
+                            News Breakdown
+                        </h3>
+                    </div>
+
+                    <span>All News</span>
+
+                </div>
+
+
+                <div class="breakdown">
+
+                    <div class="breakdown-row">
+
+                        <div class="breakdown-title">
+                            <span class="dot bullish"></span>
+                            Bullish
+                        </div>
+
+                        <strong id="bullishPercent">
+                            0%
+                        </strong>
+
+                    </div>
+
+                    <div class="progress">
+                        <div id="bullishBar"
+                             class="progress-fill bullish-fill">
+                        </div>
+                    </div>
+
+
+
+                    <div class="breakdown-row">
+
+                        <div class="breakdown-title">
+                            <span class="dot neutral"></span>
+                            Neutral
+                        </div>
+
+                        <strong id="neutralPercent">
+                            0%
+                        </strong>
+
+                    </div>
+
+                    <div class="progress">
+                        <div id="neutralBar"
+                             class="progress-fill neutral-fill">
+                        </div>
+                    </div>
+
+
+
+                    <div class="breakdown-row">
+
+                        <div class="breakdown-title">
+                            <span class="dot bearish"></span>
+                            Bearish
+                        </div>
+
+                        <strong id="bearishPercent">
+                            0%
+                        </strong>
+
+                    </div>
+
+                    <div class="progress">
+                        <div id="bearishBar"
+                             class="progress-fill bearish-fill">
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- TRENDING SECTORS -->
+
+            <div class="panel">
+
+                <div class="panel-heading">
+
+                    <div>
+                        <p class="section-label">
+                            MARKET FOCUS
+                        </p>
+
+                        <h3>
+                            🔥 Trending Sectors
+                        </h3>
+                    </div>
+
+                </div>
+
+
+                <div id="sectorList"
+                     class="sector-list">
+
+                    <p class="loading">
+                        Analyzing sectors...
+                    </p>
+
+                </div>
+
             </div>
 
         </section>
 
 
-        <!-- Global News -->
-        <section class="news-section">
 
-            <h2>🌎 Global Financial News</h2>
+        <!-- =========================
+             NEWS SECTION
+        ========================== -->
 
-            <div id="globalNews" class="news-container">
-                Loading news...
+        <section class="section news-section">
+
+
+            <div class="section-heading">
+
+                <div>
+
+                    <p class="section-label">
+                        FINANCIAL NEWS
+                    </p>
+
+                    <h2>
+                        Latest News
+                    </h2>
+
+                </div>
+
             </div>
+
+
+
+            <!-- SEARCH -->
+
+            <div class="controls">
+
+
+                <div class="search-box">
+
+                    <span>
+                        🔎
+                    </span>
+
+                    <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="Search financial news..."
+                    >
+
+                </div>
+
+
+
+                <!-- REGION FILTER -->
+
+                <div class="filter-group">
+
+                    <button
+                        class="filter-btn active"
+                        data-region="all">
+                        All
+                    </button>
+
+                    <button
+                        class="filter-btn"
+                        data-region="india">
+                        🇮🇳 India
+                    </button>
+
+                    <button
+                        class="filter-btn"
+                        data-region="global">
+                        🌎 Global
+                    </button>
+
+                </div>
+
+
+
+                <!-- SENTIMENT FILTER -->
+
+                <div class="filter-group">
+
+                    <button
+                        class="sentiment-filter active"
+                        data-sentiment="all">
+                        All
+                    </button>
+
+                    <button
+                        class="sentiment-filter"
+                        data-sentiment="Bullish">
+                        🟢 Bullish
+                    </button>
+
+                    <button
+                        class="sentiment-filter"
+                        data-sentiment="Neutral">
+                        🟡 Neutral
+                    </button>
+
+                    <button
+                        class="sentiment-filter"
+                        data-sentiment="Bearish">
+                        🔴 Bearish
+                    </button>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- NEWS COUNT -->
+
+            <div class="results-info">
+
+                <span id="resultsCount">
+                    Loading news...
+                </span>
+
+            </div>
+
+
+
+            <!-- NEWS -->
+
+            <div id="newsContainer"
+                 class="news-container">
+
+                <div class="loading-card">
+
+                    <div class="loader"></div>
+
+                    <p>
+                        Loading financial news...
+                    </p>
+
+                </div>
+
+            </div>
+
 
         </section>
 
     </main>
 
 
+
+    <!-- =========================
+         FOOTER
+    ========================== -->
+
     <footer>
-        <p>FinPulse | Financial News Dashboard</p>
+
+        <div class="footer-logo">
+            ◈ FinPulse
+        </div>
+
+        <p>
+            Financial News & Market Intelligence Dashboard
+        </p>
+
+        <small>
+            Built with HTML, CSS & JavaScript
+        </small>
+
     </footer>
+
 
 
     <script src="script.js"></script>
 
 </body>
+
 </html>
