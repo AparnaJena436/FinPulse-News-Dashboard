@@ -1,2303 +1,1365 @@
-/* ==========================================
-   FINPULSE V3
+/* =========================================================
+   FINPULSE V2
    Financial News Intelligence Dashboard
-========================================== */
+   ========================================================= */
 
 
-/* ==========================================
+/* =========================================================
    RSS API
-========================================== */
+========================================================= */
 
 const RSS2JSON_API =
     "https://api.rss2json.com/v1/api.json?rss_url=";
 
 
-/* ==========================================
+/* =========================================================
    RSS FEEDS
-========================================== */
+========================================================= */
 
 const indiaFeeds = [
+    {
+        name: "Moneycontrol",
+        url: "https://www.moneycontrol.com/rss/latestnews.xml"
+    },
 
-    "https://economictimes.indiatimes.com/rssfeedsdefault.cms",
+    {
+        name: "Economic Times",
+        url: "https://economictimes.indiatimes.com/rssfeedstopstories.cms"
+    },
 
-    "https://timesofindia.indiatimes.com/rssfeeds/1898055.cms"
-
+    {
+        name: "Business Standard",
+        url: "https://www.business-standard.com/rss/home_page_top_stories.rss"
+    }
 ];
 
 
 const globalFeeds = [
+    {
+        name: "Reuters",
+        url: "https://feeds.reuters.com/reuters/businessNews"
+    },
 
-    "https://finance.yahoo.com/news/rssindex",
+    {
+        name: "CNBC",
+        url: "https://www.cnbc.com/id/10001147/device/rss/rss.html"
+    },
 
-    "https://www.cnbc.com/id/100003114/device/rss/rss.html"
-
+    {
+        name: "MarketWatch",
+        url: "https://feeds.marketwatch.com/marketwatch/topstories/"
+    }
 ];
 
 
-/* ==========================================
-   GLOBAL NEWS ARRAY
-========================================== */
+/* =========================================================
+   GLOBAL VARIABLES
+========================================================= */
 
 let allNews = [];
 
+let currentMarket =
+    "all";
 
-/* ==========================================
-   FILTER STATE
-========================================== */
+let currentIndustry =
+    "all";
 
-let selectedRegion = "all";
+let currentSentiment =
+    "all";
 
-let selectedSentiment = "all";
-
-let searchTerm = "";
-
-
-/* ==========================================
-   SENTIMENT KEYWORDS
-========================================== */
-
-const positiveWords = [
-
-    "growth",
-    "profit",
-    "surge",
-    "increase",
-    "rise",
-    "gain",
-    "record",
-    "boost",
-    "strong",
-    "positive",
-    "recovery",
-    "expansion",
-    "investment",
-    "approval",
-    "improve",
-    "improvement",
-    "success",
-    "higher",
-    "upbeat"
-
-];
+let searchTerm =
+    "";
 
 
-const negativeWords = [
+/* =========================================================
+   DOM ELEMENTS
+========================================================= */
 
-    "loss",
-    "fall",
-    "decline",
-    "drop",
-    "crisis",
-    "weak",
-    "risk",
-    "debt",
-    "inflation",
-    "layoff",
-    "slowdown",
-    "warning",
-    "concern",
-    "lower",
-    "downgrade",
-    "weakness",
-    "deficit",
-    "uncertainty",
-    "cut"
+const newsContainer =
+    document.getElementById("newsContainer");
 
-];
+const resultsInfo =
+    document.getElementById("resultsInfo");
+
+const searchInput =
+    document.getElementById("searchInput");
+
+const filterButtons =
+    document.querySelectorAll(".filter-btn");
+
+const sentimentButtons =
+    document.querySelectorAll(".sentiment-filter");
+
+const themeButton =
+    document.getElementById("themeToggle");
 
 
-/* ==========================================
-   INDUSTRY KEYWORDS
-========================================== */
+/* =========================================================
+   INITIALIZE
+========================================================= */
 
-const industryKeywords = {
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
 
-    "Banking & Finance": [
+        initializeTheme();
 
-        "bank",
-        "banking",
-        "loan",
-        "credit",
-        "interest rate",
-        "rbi",
-        "finance",
-        "nbfc",
-        "lending"
+        loadNews();
 
-    ],
+        setupSearch();
 
+        setupFilters();
 
-    "Technology": [
+        setupTheme();
 
-        "technology",
-        "software",
-        "ai",
-        "artificial intelligence",
-        "semiconductor",
-        "chip",
-        "it services",
-        "cloud",
-        "digital"
-
-    ],
+    }
+);
 
 
-    "Automobile": [
+/* =========================================================
+   LOAD NEWS
+========================================================= */
 
-        "car",
-        "automobile",
-        "vehicle",
-        "ev",
-        "electric vehicle",
-        "auto",
-        "motor",
-        "suv"
+async function loadNews() {
 
-    ],
-
-
-    "Energy": [
-
-        "oil",
-        "gas",
-        "energy",
-        "petrol",
-        "diesel",
-        "renewable",
-        "solar",
-        "crude"
-
-    ],
-
-
-    "Pharmaceuticals": [
-
-        "pharma",
-        "drug",
-        "medicine",
-        "healthcare",
-        "hospital",
-        "biotech"
-
-    ],
-
-
-    "Consumer Goods": [
-
-        "consumer",
-        "fmcg",
-        "food",
-        "retail",
-        "beverage",
-        "product",
-        "sales"
-
-    ],
-
-
-    "Real Estate": [
-
-        "real estate",
-        "property",
-        "housing",
-        "construction",
-        "home"
-
-    ],
-
-
-    "Telecommunications": [
-
-        "telecom",
-        "5g",
-        "mobile network",
-        "jio",
-        "airtel",
-        "internet"
-
-    ]
-
-};
-
-
-/* ==========================================
-   FETCH NEWS
-========================================== */
-
-async function fetchNews(feedURL) {
+    showLoading();
 
     try {
 
-        const response = await fetch(
-            RSS2JSON_API +
-            encodeURIComponent(feedURL)
-        );
+        const indiaNews =
+            await fetchFeeds(indiaFeeds, "India");
 
+        const globalNews =
+            await fetchFeeds(globalFeeds, "Global");
 
-        const data = await response.json();
+        allNews = [
+            ...indiaNews,
+            ...globalNews
+        ];
 
+        allNews =
+            removeDuplicates(allNews);
 
-        return data.items || [];
+        allNews =
+            allNews.map(
+                news => {
+
+                    return {
+                        ...news,
+
+                        sentiment:
+                            detectSentiment(
+                                news.title +
+                                " " +
+                                news.description
+                            ),
+
+                        industry:
+                            detectIndustry(
+                                news.title +
+                                " " +
+                                news.description
+                            ),
+
+                        market:
+                            detectMarket(
+                                news.title +
+                                " " +
+                                news.description
+                            ),
+
+                        analysis:
+                            generateNewsAnalysis(news)
+
+                    };
+
+                }
+            );
+
+        updateDashboard();
+
+        renderNews();
 
     }
 
     catch (error) {
 
         console.error(
-            "News fetch error:",
+            "News loading error:",
             error
         );
 
-        return [];
+        showError();
 
     }
 
 }
 
 
-/* ==========================================
-   SENTIMENT
-========================================== */
+/* =========================================================
+   FETCH RSS FEEDS
+========================================================= */
 
-function analyzeSentiment(
-    title,
-    description
+async function fetchFeeds(
+    feeds,
+    market
 ) {
 
-    const text =
-        `${title} ${description}`
-        .toLowerCase();
-
-
-    let positive = 0;
-
-    let negative = 0;
-
-
-    positiveWords.forEach(word => {
-
-        if (text.includes(word)) {
-
-            positive++;
-
-        }
-
-    });
-
-
-    negativeWords.forEach(word => {
-
-        if (text.includes(word)) {
-
-            negative++;
-
-        }
-
-    });
-
-
-    if (positive > negative) {
-
-        return "Bullish";
-
-    }
-
-
-    if (negative > positive) {
-
-        return "Bearish";
-
-    }
-
-
-    return "Neutral";
-
-}
-
-
-/* ==========================================
-   INDUSTRY DETECTION
-========================================== */
-
-function detectIndustry(
-    title,
-    description
-) {
-
-    const text =
-        `${title} ${description}`
-        .toLowerCase();
-
-
-    let industries = [];
-
+    const results = [];
 
     for (
-        const industry in industryKeywords
+        const feed of feeds
     ) {
 
-        const keywords =
-            industryKeywords[industry];
+        try {
 
+            const response =
+                await fetch(
+                    RSS2JSON_API +
+                    encodeURIComponent(
+                        feed.url
+                    )
+                );
 
-        const found =
-            keywords.some(keyword =>
-                text.includes(keyword)
+            if (
+                !response.ok
+            ) {
+                continue;
+            }
+
+            const data =
+                await response.json();
+
+            if (
+                !data.items
+            ) {
+                continue;
+            }
+
+            data.items.forEach(
+                item => {
+
+                    results.push({
+
+                        title:
+                            cleanText(
+                                item.title
+                            ),
+
+                        description:
+                            cleanText(
+                                item.description ||
+                                item.content ||
+                                ""
+                            ),
+
+                        link:
+                            item.link,
+
+                        source:
+                            feed.name,
+
+                        market:
+                            market,
+
+                        date:
+                            item.pubDate,
+
+                        timestamp:
+                            new Date(
+                                item.pubDate
+                            ).getTime()
+
+                    });
+
+                }
             );
 
+        }
 
-        if (found) {
+        catch (error) {
 
-            industries.push(industry);
+            console.warn(
+                `Could not load ${feed.name}`,
+                error
+            );
 
         }
 
     }
 
-
-    if (industries.length === 0) {
-
-        return "General Market";
-
-    }
-
-
-    return industries
-        .slice(0, 2)
-        .join(" & ");
+    return results;
 
 }
 
 
-/* ==========================================
-   COMPANY / STOCK DATABASE
-========================================== */
+/* =========================================================
+   CLEAN TEXT
+========================================================= */
 
-const companyDatabase = {
+function cleanText(text) {
 
-    "dixon technologies": {
-        name: "Dixon Technologies",
-        ticker: "DIXON",
-        industry: "Electronics Manufacturing"
-    },
-
-    "dixon": {
-        name: "Dixon Technologies",
-        ticker: "DIXON",
-        industry: "Electronics Manufacturing"
-    },
-
-    "reliance industries": {
-        name: "Reliance Industries",
-        ticker: "RELIANCE",
-        industry: "Energy, Telecom & Retail"
-    },
-
-    "reliance": {
-        name: "Reliance Industries",
-        ticker: "RELIANCE",
-        industry: "Energy, Telecom & Retail"
-    },
-
-    "hdfc bank": {
-        name: "HDFC Bank",
-        ticker: "HDFCBANK",
-        industry: "Banking & Finance"
-    },
-
-    "icici bank": {
-        name: "ICICI Bank",
-        ticker: "ICICIBANK",
-        industry: "Banking & Finance"
-    },
-
-    "state bank of india": {
-        name: "State Bank of India",
-        ticker: "SBIN",
-        industry: "Banking & Finance"
-    },
-
-    "sbi": {
-        name: "State Bank of India",
-        ticker: "SBIN",
-        industry: "Banking & Finance"
-    },
-
-    "tata motors": {
-        name: "Tata Motors",
-        ticker: "TATAMOTORS",
-        industry: "Automobile"
-    },
-
-    "tata consultancy services": {
-        name: "Tata Consultancy Services",
-        ticker: "TCS",
-        industry: "Information Technology"
-    },
-
-    "tcs": {
-        name: "Tata Consultancy Services",
-        ticker: "TCS",
-        industry: "Information Technology"
-    },
-
-    "infosys": {
-        name: "Infosys",
-        ticker: "INFY",
-        industry: "Information Technology"
-    },
-
-    "wipro": {
-        name: "Wipro",
-        ticker: "WIPRO",
-        industry: "Information Technology"
-    },
-
-    "sun pharma": {
-        name: "Sun Pharmaceutical",
-        ticker: "SUNPHARMA",
-        industry: "Pharmaceuticals"
-    },
-
-    "bharti airtel": {
-        name: "Bharti Airtel",
-        ticker: "BHARTIARTL",
-        industry: "Telecommunications"
-    },
-
-    "airtel": {
-        name: "Bharti Airtel",
-        ticker: "BHARTIARTL",
-        industry: "Telecommunications"
-    },
-
-    "itc": {
-        name: "ITC",
-        ticker: "ITC",
-        industry: "Consumer Goods"
-    },
-
-    "nestle india": {
-        name: "Nestlé India",
-        ticker: "NESTLEIND",
-        industry: "Consumer Goods"
+    if (!text) {
+        return "";
     }
 
-};
+    const temporary =
+        document.createElement(
+            "div"
+        );
 
+    temporary.innerHTML =
+        text;
 
-/* ==========================================
-   FIND COMPANY
-========================================== */
-
-function identifyCompany(
-    title,
-    description
-) {
-
-    const text =
-        `${title} ${description}`
-        .toLowerCase();
-
-
-    for (
-        const key in companyDatabase
-    ) {
-
-        if (
-            text.includes(key)
-        ) {
-
-            return companyDatabase[key];
-
-        }
-
-    }
-
-
-    return null;
+    return temporary.textContent
+        .replace(/\s+/g, " ")
+        .trim();
 
 }
 
 
-/* ==========================================
-   EVENT DETECTION
-========================================== */
+/* =========================================================
+   REMOVE DUPLICATES
+========================================================= */
 
-function detectNewsEvent(
-    title,
-    description
-) {
+function removeDuplicates(news) {
 
-    const text =
-        `${title} ${description}`
-        .toLowerCase();
+    const seen =
+        new Set();
 
+    return news.filter(
+        item => {
 
-    /* Earnings */
+            const key =
+                item.title
+                    .toLowerCase()
+                    .replace(
+                        /[^a-z0-9]/g,
+                        ""
+                    );
 
-    if (
+            if (
+                seen.has(key)
+            ) {
+                return false;
+            }
 
-        text.includes("profit") ||
+            seen.add(key);
 
-        text.includes("earnings") ||
+            return true;
 
-        text.includes("quarterly results") ||
-
-        text.includes("quarter results") ||
-
-        text.includes("revenue")
-
-    ) {
-
-        return "earnings";
-
-    }
-
-
-    /* Investment */
-
-    if (
-
-        text.includes("investment") ||
-
-        text.includes("invests") ||
-
-        text.includes("invested") ||
-
-        text.includes("capital expenditure") ||
-
-        text.includes("capex")
-
-    ) {
-
-        return "investment";
-
-    }
-
-
-    /* Expansion */
-
-    if (
-
-        text.includes("expansion") ||
-
-        text.includes("new facility") ||
-
-        text.includes("new plant") ||
-
-        text.includes("manufacturing plant") ||
-
-        text.includes("capacity")
-
-    ) {
-
-        return "expansion";
-
-    }
-
-
-    /* Government approval */
-
-    if (
-
-        text.includes("government approval") ||
-
-        text.includes("approved by government") ||
-
-        text.includes("government approves") ||
-
-        text.includes("approval")
-
-    ) {
-
-        return "government_approval";
-
-    }
-
-
-    /* Interest rates */
-
-    if (
-
-        text.includes("rbi") ||
-
-        text.includes("repo rate") ||
-
-        text.includes("interest rate") ||
-
-        text.includes("rate cut") ||
-
-        text.includes("rate hike")
-
-    ) {
-
-        return "interest_rate";
-
-    }
-
-
-    /* Stock movement */
-
-    if (
-
-        text.includes("shares rise") ||
-
-        text.includes("shares jump") ||
-
-        text.includes("stock rises") ||
-
-        text.includes("stock jumps") ||
-
-        text.includes("shares fall") ||
-
-        text.includes("stock falls") ||
-
-        text.includes("shares decline")
-
-    ) {
-
-        return "stock_movement";
-
-    }
-
-
-    /* Merger / acquisition */
-
-    if (
-
-        text.includes("acquisition") ||
-
-        text.includes("acquire") ||
-
-        text.includes("merger") ||
-
-        text.includes("merges")
-
-    ) {
-
-        return "merger";
-
-    }
-
-
-    /* Dividend */
-
-    if (
-
-        text.includes("dividend") ||
-
-        text.includes("dividend payout")
-
-    ) {
-
-        return "dividend";
-
-    }
-
-
-    /* Layoffs */
-
-    if (
-
-        text.includes("layoff") ||
-
-        text.includes("layoffs") ||
-
-        text.includes("job cuts") ||
-
-        text.includes("workforce reduction")
-
-    ) {
-
-        return "layoffs";
-
-    }
-
-
-    /* Oil */
-
-    if (
-
-        text.includes("crude oil") ||
-
-        text.includes("oil prices") ||
-
-        text.includes("crude prices")
-
-    ) {
-
-        return "oil";
-
-    }
-
-
-    /* Inflation */
-
-    if (
-
-        text.includes("inflation") ||
-
-        text.includes("cpi")
-
-    ) {
-
-        return "inflation";
-
-    }
-
-
-    return "general";
+        }
+    );
 
 }
 
 
-/* ==========================================
-   SIMPLE, SPECIFIC NEWS EXPLANATION
-========================================== */
-
-function simplifyNews(
-    title,
-    description,
-    company,
-    event
-) {
-
-    const companyName =
-        company
-            ? company.name
-            : "the company or market mentioned in the article";
-
-
-    switch (event) {
-
-
-        case "earnings":
-
-            if (company) {
-
-                return `
-
-                    <strong>${companyName}</strong>
-                    has reported a change in its financial
-                    performance.
-
-                    In simple terms, investors are looking at
-                    whether the company is making more or less
-                    money than before.
-
-                    The importance of this news depends on how
-                    the reported performance compares with
-                    expectations.
-
-                `;
-
-            }
-
-
-            return `
-
-                The article is about a company's financial results.
-
-                In simple terms, the company has reported how much
-                it earned during the period, and investors are
-                assessing whether its business performance is
-                improving or weakening.
-
-            `;
-
-
-        case "investment":
-
-            if (company) {
-
-                return `
-
-                    <strong>${companyName}</strong>
-                    is putting money into a new project, facility
-                    or business activity.
-
-                    In simple terms, the company is spending today
-                    with the expectation of increasing its capacity,
-                    revenue or business opportunities in the future.
-
-                `;
-
-            }
-
-
-            return `
-
-                The company mentioned in the article is making
-                a new investment.
-
-                In simple terms, it is spending money now in the
-                expectation of creating additional business
-                opportunities in the future.
-
-            `;
-
-
-        case "expansion":
-
-            if (company) {
-
-                return `
-
-                    <strong>${companyName}</strong>
-                    is expanding its operations or production
-                    capacity.
-
-                    In simple terms, the company is preparing to
-                    produce more, serve more customers or enter
-                    a larger market.
-
-                `;
-
-            }
-
-
-            return `
-
-                The article describes an expansion of business
-                or manufacturing capacity.
-
-                This generally means the company is preparing
-                to handle more production or demand.
-
-            `;
-
-
-        case "government_approval":
-
-            if (company) {
-
-                return `
-
-                    The government has approved a decision or
-                    project involving <strong>${companyName}</strong>.
-
-                    In simple terms, this gives the company
-                    permission or support to move forward with
-                    the activity described in the article.
-
-                `;
-
-            }
-
-
-            return `
-
-                The government has approved a policy, project
-                or business activity.
-
-                The important point is that the decision can
-                change what affected businesses are allowed
-                or able to do.
-
-            `;
-
-
-        case "interest_rate":
-
-            return `
-
-                The article is about interest rates or RBI
-                monetary policy.
-
-                In simple terms, changes in interest rates
-                influence how expensive it is for banks,
-                businesses and consumers to borrow money.
-
-                This can affect loans, spending, investment
-                and company profits.
-
-            `;
-
-
-        case "stock_movement":
-
-            if (company) {
-
-                return `
-
-                    <strong>${companyName}</strong>
-                    is experiencing a movement in its share price.
-
-                    The important question is not only that
-                    the stock moved, but <strong>why</strong>
-                    investors are buying or selling it.
-
-                    The article describes the event that may
-                    be driving that movement.
-
-                `;
-
-            }
-
-
-            return `
-
-                The article is reporting a movement in a
-                company's share price.
-
-                This means investors are changing their buying
-                or selling decisions in response to new information.
-
-            `;
-
-
-        case "merger":
-
-            if (company) {
-
-                return `
-
-                    <strong>${companyName}</strong>
-                    is involved in a merger or acquisition.
-
-                    In simple terms, the company is combining
-                    with, buying or being bought by another business.
-
-                    This can change the company's size, operations,
-                    costs and future growth opportunities.
-
-                `;
-
-            }
-
-
-            return `
-
-                The article describes a merger or acquisition.
-
-                In simple terms, two businesses are combining
-                or one business is buying another.
-
-            `;
-
-
-        case "dividend":
-
-            if (company) {
-
-                return `
-
-                    <strong>${companyName}</strong>
-                    is announcing or changing its dividend.
-
-                    A dividend is money distributed by a company
-                    to its shareholders from its profits.
-
-                `;
-
-            }
-
-
-            return `
-
-                The company is discussing a dividend, which means
-                shareholders may receive a portion of the company's
-                profits.
-
-            `;
-
-
-        case "layoffs":
-
-            if (company) {
-
-                return `
-
-                    <strong>${companyName}</strong>
-                    is reducing its workforce.
-
-                    In simple terms, the company is cutting jobs,
-                    usually to reduce costs or respond to weaker
-                    business conditions.
-
-                `;
-
-            }
-
-
-            return `
-
-                The company mentioned in the article is reducing
-                its workforce.
-
-                This usually means it is trying to reduce costs
-                or respond to changing business conditions.
-
-            `;
-
-
-        case "oil":
-
-            return `
-
-                The article is about crude oil or oil prices.
-
-                In simple terms, changes in oil prices can
-                increase or reduce costs for companies that
-                use fuel, transportation or petroleum-based inputs.
-
-            `;
-
-
-        case "inflation":
-
-            return `
-
-                The article is about inflation, meaning the
-                prices of goods and services are changing.
-
-                Higher inflation can reduce consumers'
-                purchasing power and increase costs for businesses.
-
-            `;
-
-
-        default:
-
-            return `
-
-                The article describes a recent development
-                that could affect the company, industry or
-                market mentioned.
-
-                The key point is to understand what has changed
-                and whether that change could affect future
-                business performance, costs, demand or
-                investor expectations.
-
-            `;
-
-    }
-
-}
-
-
-/* ==========================================
-   SPECIFIC IMPACT ANALYSIS
-========================================== */
-
-function determineImpact(
-    title,
-    description,
-    sentiment,
-    company,
-    event
-) {
-
-    const text =
-        `${title} ${description}`
-        .toLowerCase();
-
-
-    const companyName =
-        company
-            ? company.name
-            : "the company";
-
-
-    /* Earnings */
-
-    if (
-        event === "earnings"
-    ) {
-
-        let direction =
-            sentiment;
-
-
-        if (
-
-            text.includes("profit rises") ||
-
-            text.includes("profit jumps") ||
-
-            text.includes("profit grows") ||
-
-            text.includes("profit increases") ||
-
-            text.includes("revenue rises")
-
-        ) {
-
-            direction =
-                "Bullish";
-
-        }
-
-
-        else if (
-
-            text.includes("profit falls") ||
-
-            text.includes("profit declines") ||
-
-            text.includes("profit drops") ||
-
-            text.includes("revenue falls") ||
-
-            text.includes("loss")
-
-        ) {
-
-            direction =
-                "Bearish";
-
-        }
-
-
-        if (
-            direction === "Bullish"
-        ) {
-
-            return `
-
-                <strong>Positive impact:</strong>
-
-                The reported improvement suggests that
-                ${companyName}'s business performance may be
-                strengthening.
-
-                Investors may react positively because stronger
-                earnings can support expectations of future
-                profitability.
-
-                <br><br>
-
-                <strong>Current impact:</strong>
-
-                The share price may react as investors absorb
-                the results.
-
-                <br><br>
-
-                <strong>Future impact:</strong>
-
-                The longer-term effect depends on whether the
-                improvement continues in the coming quarters.
-
-            `;
-
-        }
-
-
-        if (
-            direction === "Bearish"
-        ) {
-
-            return `
-
-                <strong>Potentially negative impact:</strong>
-
-                The weaker financial performance can reduce
-                expectations about the company's future earnings.
-
-                <br><br>
-
-                <strong>Current impact:</strong>
-
-                Investors may react by reassessing the company's
-                valuation.
-
-                <br><br>
-
-                <strong>Future impact:</strong>
-
-                The impact becomes more important if weaker
-                earnings continue across future quarters.
-
-            `;
-
-        }
-
-
-        return `
-
-            <strong>Mixed / uncertain impact:</strong>
-
-            The financial results contain information that
-            investors will compare with previous performance
-            and expectations.
-
-            <br><br>
-
-            <strong>Current impact:</strong>
-
-            The share price may react as investors interpret
-            the results.
-
-            <br><br>
-
-            <strong>Future impact:</strong>
-
-            The direction will depend on whether the company's
-            earnings improve or weaken in future periods.
-
-        `;
-
-    }
-
-
-    /* Investment */
-
-    if (
-        event === "investment"
-    ) {
-
-        return `
-
-            <strong>Potentially positive impact:</strong>
-
-            ${companyName}'s investment could increase its
-            capacity, create new business opportunities or
-            support future revenue.
-
-            <br><br>
-
-            <strong>Current impact:</strong>
-
-            Investors may react positively to the expected
-            growth, although the actual financial benefit
-            may not appear immediately.
-
-            <br><br>
-
-            <strong>Future impact:</strong>
-
-            The larger impact will depend on whether the
-            investment is successfully completed and generates
-            additional revenue or profit.
-
-        `;
-
-    }
-
-
-    /* Expansion */
-
-    if (
-        event === "expansion"
-    ) {
-
-        return `
-
-            <strong>Potentially positive impact:</strong>
-
-            The expansion could allow ${companyName} to
-            produce more, serve additional customers or
-            enter new markets.
-
-            <br><br>
-
-            <strong>Current impact:</strong>
-
-            Investors may respond to the expectation of
-            future growth.
-
-            <br><br>
-
-            <strong>Future impact:</strong>
-
-            The actual benefit will depend on demand,
-            execution costs and how quickly the additional
-            capacity starts generating revenue.
-
-        `;
-
-    }
-
-
-    /* Government approval */
-
-    if (
-        event === "government_approval"
-    ) {
-
-        if (
-            sentiment === "Bullish"
-        ) {
-
-            return `
-
-                <strong>Positive impact:</strong>
-
-                The approval removes or reduces a barrier to
-                the activity described in the article and
-                gives ${companyName} greater ability to move forward.
-
-                <br><br>
-
-                <strong>Current impact:</strong>
-
-                Investors may react immediately because the
-                approval changes expectations about the company's
-                future business.
-
-                <br><br>
-
-                <strong>Future impact:</strong>
-
-                The actual financial benefit will depend on
-                implementation, investment and the revenue
-                generated from the approved project.
-
-            `;
-
-        }
-
-
-        return `
-
-            <strong>Impact:</strong>
-
-            The government decision changes the business
-            environment for ${companyName} or the industry involved.
-
-            <br><br>
-
-            <strong>Current impact:</strong>
-
-            Investors and businesses may adjust their
-            expectations based on the new decision.
-
-            <br><br>
-
-            <strong>Future impact:</strong>
-
-            The longer-term effect depends on how the
-            policy or approval is implemented.
-
-        `;
-
-    }
-
-
-    /* Interest rate */
-
-    if (
-        event === "interest_rate"
-    ) {
-
-        return `
-
-            <strong>Market impact:</strong>
-
-            Interest-rate decisions can affect borrowing costs,
-            loan demand and business investment.
-
-            <br><br>
-
-            <strong>Current impact:</strong>
-
-            Banks, borrowers and investors can react quickly
-            to an RBI rate decision.
-
-            <br><br>
-
-            <strong>Future impact:</strong>
-
-            The effect becomes clearer through changes in
-            lending, consumer spending, investment and
-            company profitability.
-
-        `;
-
-    }
-
-
-    /* Stock movement */
-
-    if (
-        event === "stock_movement"
-    ) {
-
-        const impactWord =
-
-            sentiment === "Bullish"
-
-                ? "Positive"
-
-                : sentiment === "Bearish"
-
-                    ? "Negative"
-
-                    : "Mixed";
-
-
-        return `
-
-            <strong>${impactWord} impact:</strong>
-
-            ${companyName}'s share price is responding
-            to new information described in the article.
-
-            <br><br>
-
-            <strong>Current impact:</strong>
-
-            Investors are already reacting through buying
-            or selling pressure on the stock.
-
-            <br><br>
-
-            <strong>Future impact:</strong>
-
-            Whether the movement continues depends on
-            whether investors believe the underlying news
-            will actually change the company's future
-            earnings or business performance.
-
-        `;
-
-    }
-
-
-    /* Merger */
-
-    if (
-        event === "merger"
-    ) {
-
-        return `
-
-            <strong>Potential impact:</strong>
-
-            The merger or acquisition could change the
-            company's size, market position, costs and
-            growth opportunities.
-
-            <br><br>
-
-            <strong>Current impact:</strong>
-
-            Investors may react to the expected benefits
-            and risks of the transaction.
-
-            <br><br>
-
-            <strong>Future impact:</strong>
-
-            The real impact depends on whether the combined
-            business achieves the expected cost savings,
-            growth or synergies.
-
-        `;
-
-    }
-
-
-    /* Dividend */
-
-    if (
-        event === "dividend"
-    ) {
-
-        return `
-
-            <strong>Impact:</strong>
-
-            A dividend announcement directly matters to
-            shareholders because it changes the amount of
-            cash they may receive.
-
-            <br><br>
-
-            <strong>Current impact:</strong>
-
-            Investors may react to the dividend and what
-            it signals about the company's financial position.
-
-            <br><br>
-
-            <strong>Future impact:</strong>
-
-            Investors may watch whether the company can
-            maintain similar payouts while continuing to
-            invest for growth.
-
-        `;
-
-    }
-
-
-    /* Layoffs */
-
-    if (
-        event === "layoffs"
-    ) {
-
-        return `
-
-            <strong>Potentially negative impact:</strong>
-
-            Job cuts may indicate that ${companyName} is
-            trying to reduce costs or is facing weaker
-            business conditions.
-
-            <br><br>
-
-            <strong>Current impact:</strong>
-
-            Employees are directly affected and investors
-            may reassess the company's near-term performance.
-
-            <br><br>
-
-            <strong>Future impact:</strong>
-
-            Lower costs could improve profitability, but
-            continued layoffs may also indicate weaker
-            demand or business pressure.
-
-        `;
-
-    }
-
-
-    /* Oil */
-
-    if (
-        event === "oil"
-    ) {
-
-        return `
-
-            <strong>Industry impact:</strong>
-
-            Changes in crude oil prices can affect companies
-            that depend heavily on fuel or petroleum-based inputs.
-
-            <br><br>
-
-            <strong>Current impact:</strong>
-
-            Fuel and input costs can change relatively quickly.
-
-            <br><br>
-
-            <strong>Future impact:</strong>
-
-            If oil prices remain high or low for an extended
-            period, company margins, inflation and consumer
-            prices may also change.
-
-        `;
-
-    }
-
-
-    /* Inflation */
-
-    if (
-        event === "inflation"
-    ) {
-
-        return `
-
-            <strong>Economic impact:</strong>
-
-            Higher inflation generally means consumers pay
-            more for goods and services and businesses may
-            face higher costs.
-
-            <br><br>
-
-            <strong>Current impact:</strong>
-
-            Consumer purchasing power and business costs
-            can be affected.
-
-            <br><br>
-
-            <strong>Future impact:</strong>
-
-            Persistent inflation can influence interest rates,
-            consumer demand and company profitability.
-
-        `;
-
-    }
-
-
-    /* General */
-
-    return `
-
-        <strong>${sentiment} / Mixed impact:</strong>
-
-        The article describes a development that could
-        influence ${companyName} or the related industry.
-
-        <br><br>
-
-        <strong>Current impact:</strong>
-
-        Investors and businesses may react as they assess
-        what the development means for the company's
-        performance.
-
-        <br><br>
-
-        <strong>Future impact:</strong>
-
-        The longer-term effect will depend on whether
-        this development changes revenue, costs, demand,
-        investment or profitability.
-
-    `;
-
-}
-
-
-/* ==========================================
-   AFFECTED STAKEHOLDERS
-========================================== */
-
-function identifyAffected(
-    title,
-    description,
-    company,
-    industry,
-    event
-) {
-
-    const text =
-        `${title} ${description}`
-        .toLowerCase();
-
-
-    let affected = [];
-
-
-    /* Company */
-
-    if (
-        company
-    ) {
-
-        affected.push(
-            company.name
-        );
-
-    }
-
-
-    /* Investors */
-
-    if (
-
-        text.includes("stock") ||
-
-        text.includes("shares") ||
-
-        text.includes("investor") ||
-
-        text.includes("market") ||
-
-        text.includes("profit") ||
-
-        text.includes("earnings") ||
-
-        text.includes("investment") ||
-
-        event === "government_approval" ||
-
-        event === "expansion"
-
-    ) {
-
-        affected.push(
-            "Investors & shareholders"
-        );
-
-    }
-
-
-    /* Consumers */
-
-    if (
-
-        text.includes("consumer") ||
-
-        text.includes("price") ||
-
-        text.includes("inflation") ||
-
-        (
-            industry &&
-            industry.includes("Consumer")
-        )
-
-    ) {
-
-        affected.push(
-            "Consumers"
-        );
-
-    }
-
-
-    /* Employees */
-
-    if (
-
-        text.includes("employee") ||
-
-        text.includes("job") ||
-
-        text.includes("layoff") ||
-
-        event === "expansion"
-
-    ) {
-
-        affected.push(
-            "Employees"
-        );
-
-    }
-
-
-    /* Government */
-
-    if (
-
-        text.includes("government") ||
-
-        text.includes("rbi") ||
-
-        text.includes("policy") ||
-
-        text.includes("tax") ||
-
-        event === "government_approval"
-
-    ) {
-
-        affected.push(
-            "Government / policymakers"
-        );
-
-    }
-
-
-    /* Banks and borrowers */
-
-    if (
-        event === "interest_rate"
-    ) {
-
-        affected.push(
-            "Banks & borrowers"
-        );
-
-    }
-
-
-    /* Industry */
-
-    if (
-
-        industry &&
-
-        industry !== "General Market"
-
-    ) {
-
-        affected.push(
-            `${industry} industry`
-        );
-
-    }
-
-
-    if (
-        affected.length === 0
-    ) {
-
-        affected.push(
-            "Businesses, investors and the wider market"
-        );
-
-    }
-
-
-    return [
-        ...new Set(
-            affected
-        )
-    ].join(", ");
-
-}
-
-
-/* ==========================================
-   IMPACT TIMING
-========================================== */
-
-function getImpactTiming(
-    event
-) {
-
-    const immediateEvents = [
-
-        "stock_movement",
-
-        "government_approval",
-
-        "interest_rate",
-
-        "earnings",
-
-        "dividend"
+/* =========================================================
+   SENTIMENT DETECTION
+========================================================= */
+
+function detectSentiment(text) {
+
+    const content =
+        text.toLowerCase();
+
+
+    const bullishWords = [
+
+        "surge",
+        "surges",
+        "rally",
+        "rallies",
+        "gain",
+        "gains",
+        "growth",
+        "profit",
+        "profits",
+        "record",
+        "strong",
+        "positive",
+        "boost",
+        "rise",
+        "rises",
+        "raised",
+        "upgrade",
+        "upbeat",
+        "expansion",
+        "recovery",
+        "increase",
+        "increased",
+        "approval",
+        "approved",
+        "investment",
+        "deal",
+        "partnership",
+        "acquisition"
 
     ];
 
 
+    const bearishWords = [
+
+        "fall",
+        "falls",
+        "fell",
+        "drop",
+        "drops",
+        "decline",
+        "declines",
+        "loss",
+        "losses",
+        "weak",
+        "negative",
+        "crisis",
+        "risk",
+        "risks",
+        "downgrade",
+        "cut",
+        "cuts",
+        "slump",
+        "slumps",
+        "debt",
+        "fraud",
+        "penalty",
+        "lawsuit",
+        "warning",
+        "shutdown",
+        "delay",
+        "delayed",
+        "concern"
+
+    ];
+
+
+    let bullishScore =
+        0;
+
+    let bearishScore =
+        0;
+
+
+    bullishWords.forEach(
+        word => {
+
+            if (
+                content.includes(
+                    word
+                )
+            ) {
+
+                bullishScore++;
+
+            }
+
+        }
+    );
+
+
+    bearishWords.forEach(
+        word => {
+
+            if (
+                content.includes(
+                    word
+                )
+            ) {
+
+                bearishScore++;
+
+            }
+
+        }
+    );
+
+
     if (
-        immediateEvents.includes(event)
+        bullishScore >
+        bearishScore
     ) {
 
-        return `
-
-            <strong>⏱️ When does it matter?</strong>
-
-            The market can react immediately to this news.
-
-            The larger business impact may take several weeks,
-            months or quarters to become visible.
-
-        `;
+        return "bullish";
 
     }
 
 
     if (
-
-        event === "investment" ||
-
-        event === "expansion" ||
-
-        event === "merger"
-
+        bearishScore >
+        bullishScore
     ) {
 
-        return `
-
-            <strong>⏱️ When does it matter?</strong>
-
-            Investors may react immediately to the announcement,
-            but the actual business benefit usually appears later
-            as the project or transaction is implemented.
-
-        `;
+        return "bearish";
 
     }
 
 
-    return `
-
-        <strong>⏱️ When does it matter?</strong>
-
-        The market may react immediately, while the actual
-        business impact will become clearer as the situation develops.
-
-    `;
+    return "neutral";
 
 }
 
 
-/* ==========================================
-   CREATE NEWS ANALYSIS
-========================================== */
+/* =========================================================
+   INDUSTRY DETECTION
+========================================================= */
 
-function createNewsAnalysis(
-    article
-) {
+function detectIndustry(text) {
 
-    const title =
-        article.title || "";
+    const content =
+        text.toLowerCase();
 
 
-    const description =
-        article.description || "";
+    const industries = {
+
+        "Banking & Finance": [
+            "bank",
+            "banking",
+            "loan",
+            "credit",
+            "nbfc",
+            "rbi",
+            "interest rate",
+            "financial"
+        ],
+
+        "Technology": [
+            "technology",
+            "software",
+            "it services",
+            "artificial intelligence",
+            "ai",
+            "cloud",
+            "semiconductor",
+            "chip"
+        ],
+
+        "Automobile": [
+            "automobile",
+            "automotive",
+            "car",
+            "vehicle",
+            "ev",
+            "electric vehicle",
+            "two-wheeler",
+            "truck"
+        ],
+
+        "Pharmaceuticals": [
+            "pharma",
+            "pharmaceutical",
+            "drug",
+            "medicine",
+            "healthcare",
+            "fda"
+        ],
+
+        "Energy": [
+            "oil",
+            "gas",
+            "energy",
+            "solar",
+            "renewable",
+            "power",
+            "electricity"
+        ],
+
+        "FMCG": [
+            "fmcg",
+            "consumer goods",
+            "food",
+            "beverage",
+            "personal care",
+            "household"
+        ],
+
+        "Telecom": [
+            "telecom",
+            "5g",
+            "mobile network",
+            "jio",
+            "airtel",
+            "vodafone"
+        ],
+
+        "Real Estate": [
+            "real estate",
+            "property",
+            "housing",
+            "residential",
+            "commercial property"
+        ],
+
+        "Metals & Mining": [
+            "steel",
+            "aluminium",
+            "metal",
+            "mining",
+            "iron ore",
+            "copper"
+        ],
+
+        "Retail": [
+            "retail",
+            "e-commerce",
+            "shopping",
+            "consumer spending"
+        ]
+
+    };
 
 
-    /* Identify company */
+    let bestIndustry =
+        "General Market";
 
-    const company =
-        identifyCompany(
-            title,
-            description
-        );
+    let bestScore =
+        0;
 
 
-    /* Identify event */
+    for (
+        const industry in industries
+    ) {
 
-    const event =
-        detectNewsEvent(
-            title,
-            description
-        );
+        let score =
+            0;
 
+        industries[industry]
+            .forEach(
+                keyword => {
 
-    /* Identify industry */
+                    if (
+                        content.includes(
+                            keyword
+                        )
+                    ) {
 
-    const industry =
-        company
+                        score++;
 
-            ? company.industry
+                    }
 
-            : detectIndustry(
-                title,
-                description
+                }
             );
 
 
-    /* Identify sentiment */
+        if (
+            score >
+            bestScore
+        ) {
 
-    const sentiment =
-        analyzeSentiment(
-            title,
-            description
-        );
+            bestScore =
+                score;
 
+            bestIndustry =
+                industry;
 
-    /* Create explanation */
+        }
 
-    const explanation =
-        simplifyNews(
-            title,
-            description,
-            company,
-            event
-        );
+    }
 
 
-    /* Create impact */
-
-    const impact =
-        determineImpact(
-            title,
-            description,
-            sentiment,
-            company,
-            event
-        );
-
-
-    /* Identify affected groups */
-
-    const affected =
-        identifyAffected(
-            title,
-            description,
-            company,
-            industry,
-            event
-        );
-
-
-    /* Identify timing */
-
-    const timing =
-        getImpactTiming(
-            event
-        );
-
-
-    /* Company display */
-
-    const companyHTML =
-
-        company
-
-            ? `
-
-                <div class="analysis-item">
-
-                    <strong>
-                        🏢 Company / Stock involved
-                    </strong>
-
-                    <span>
-
-                        ${company.name}
-
-                        <small>
-                            (${company.ticker})
-                        </small>
-
-                    </span>
-
-                </div>
-
-            `
-
-            : `
-
-                <div class="analysis-item">
-
-                    <strong>
-                        🏢 Company / Stock involved
-                    </strong>
-
-                    <span>
-                        No specific listed company identified
-                    </span>
-
-                </div>
-
-            `;
-
-
-    return `
-
-        <div class="news-analysis">
-
-
-            <div class="analysis-title">
-
-                🧠 NEWS EXPLAINED
-
-            </div>
-
-
-            <!-- SIMPLE EXPLANATION -->
-
-            <div class="analysis-item">
-
-                <strong>
-                    💡 What is this news saying?
-                </strong>
-
-                <span>
-                    ${explanation}
-                </span>
-
-            </div>
-
-
-            <!-- COMPANY -->
-
-            ${companyHTML}
-
-
-            <!-- INDUSTRY -->
-
-            <div class="analysis-item">
-
-                <strong>
-                    🏭 Which industry is affected?
-                </strong>
-
-                <span>
-                    ${industry}
-                </span>
-
-            </div>
-
-
-            <!-- IMPACT -->
-
-            <div class="analysis-item">
-
-                <strong>
-                    📈 What is the impact?
-                </strong>
-
-                <span>
-                    ${impact}
-                </span>
-
-            </div>
-
-
-            <!-- TIMING -->
-
-            <div class="analysis-item">
-
-                <span>
-                    ${timing}
-                </span>
-
-            </div>
-
-
-            <!-- AFFECTED PEOPLE -->
-
-            <div class="analysis-item">
-
-                <strong>
-                    👥 Who is affected?
-                </strong>
-
-                <span>
-                    ${affected}
-                </span>
-
-            </div>
-
-
-        </div>
-
-    `;
+    return bestIndustry;
 
 }
 
 
-/* ==========================================
-   CREATE NEWS CARD
-========================================== */
+/* =========================================================
+   MARKET DETECTION
+========================================================= */
 
-function createNewsCard(
-    article,
-    index
-) {
+function detectMarket(text) {
 
-    const sentiment =
-        analyzeSentiment(
-            article.title || "",
-            article.description || ""
+    const content =
+        text.toLowerCase();
+
+
+    const indiaKeywords = [
+
+        "india",
+        "indian",
+        "nifty",
+        "sensex",
+        "bse",
+        "nse",
+        "rbi",
+        "sebi",
+        "rupee",
+        "₹",
+        "inr",
+        "mumbai",
+        "delhi"
+
+    ];
+
+
+    let indiaScore =
+        0;
+
+
+    indiaKeywords.forEach(
+        keyword => {
+
+            if (
+                content.includes(
+                    keyword
+                )
+            ) {
+
+                indiaScore++;
+
+            }
+
+        }
+    );
+
+
+    if (
+        indiaScore > 0
+    ) {
+
+        return "India";
+
+    }
+
+
+    return "Global";
+
+}
+
+
+/* =========================================================
+   GENERATE NEWS-SPECIFIC ANALYSIS
+========================================================= */
+
+function generateNewsAnalysis(news) {
+
+    const text =
+        (
+            news.title +
+            " " +
+            news.description
+        ).toLowerCase();
+
+
+    const company =
+        extractCompany(
+            news.title +
+            " " +
+            news.description
         );
 
 
     const industry =
-        detectIndustry(
-            article.title || "",
-            article.description || ""
+        news.industry ||
+        detectIndustry(text);
+
+
+    const sentiment =
+        news.sentiment ||
+        detectSentiment(text);
+
+
+    const impact =
+        determineImpact(
+            text,
+            sentiment
         );
 
 
-    const source =
-        article.author ||
-        "Financial News";
-
-
-    const card =
-        document.createElement(
-            "article"
+    const timing =
+        determineTiming(
+            text
         );
 
 
-    card.className =
-        "news-card";
+    const affected =
+        determineAffectedParties(
+            text,
+            industry
+        );
 
 
-    card.dataset.index =
-        index;
+    const simple =
+        simplifyNews(
+            news,
+            company,
+            industry,
+            sentiment
+        );
 
 
-    card.innerHTML = `
+    return {
 
-        <div class="news-top">
+        simple:
+            simple,
 
-            <div class="news-meta">
+        company:
+            company,
 
-                <span class="news-source">
-                    ${source}
-                </span>
+        industry:
+            industry,
 
-                <span class="news-industry">
-                    ${industry}
-                </span>
+        impact:
+            impact,
 
-            </div>
+        timing:
+            timing,
 
+        affected:
+            affected
 
-            <span
-                class="sentiment-label ${sentiment.toLowerCase()}"
-            >
-                ${sentiment}
-            </span>
-
-        </div>
-
-
-        <h3>
-            ${article.title}
-        </h3>
-
-
-        <p class="news-description">
-
-            ${article.description ||
-              "No description available."}
-
-        </p>
-
-
-        <div class="news-bottom">
-
-
-            <a
-                class="read-link"
-                href="${article.link}"
-                target="_blank"
-                rel="noopener noreferrer"
-            >
-
-                Read Full News →
-
-            </a>
-
-
-            <button
-                class="explain-btn"
-                onclick="toggleAnalysis(${index})"
-            >
-
-                🧠 Explain this news
-
-            </button>
-
-
-        </div>
-
-
-        ${createNewsAnalysis(article)}
-
-    `;
-
-
-    return card;
+    };
 
 }
 
 
-/* ==========================================
-   DISPLAY NEWS
-========================================== */
+/* =========================================================
+   COMPANY / STOCK EXTRACTION
+========================================================= */
 
-function displayNews(
-    news
-) {
+function extractCompany(text) {
 
-    const container =
-        document.getElementById(
-            "newsContainer"
+    const knownCompanies = [
+
+        "Reliance Industries",
+        "Tata Motors",
+        "Tata Consultancy Services",
+        "TCS",
+        "Infosys",
+        "HDFC Bank",
+        "ICICI Bank",
+        "State Bank of India",
+        "SBI",
+        "Axis Bank",
+        "ITC",
+        "Hindustan Unilever",
+        "HUL",
+        "Nestle India",
+        "Dixon Technologies",
+        "Bharti Airtel",
+        "Airtel",
+        "Adani Enterprises",
+        "Adani Ports",
+        "Larsen & Toubro",
+        "L&T",
+        "Maruti Suzuki",
+        "Mahindra & Mahindra",
+        "M&M",
+        "Sun Pharma",
+        "Dr Reddy's Laboratories",
+        "Wipro",
+        "HCLTech",
+        "Bajaj Finance",
+        "Asian Paints",
+        "Titan",
+        "Zomato",
+        "Eternal",
+        "Nykaa",
+        "Tesla",
+        "Apple",
+        "Microsoft",
+        "Amazon",
+        "Nvidia",
+        "Alphabet",
+        "Meta",
+        "Samsung",
+        "Toyota"
+
+    ];
+
+
+    const found =
+        knownCompanies.find(
+            company =>
+                text.toLowerCase()
+                    .includes(
+                        company.toLowerCase()
+                    )
         );
 
 
-    container.innerHTML = "";
+    if (
+        found
+    ) {
+
+        return found;
+
+    }
+
+
+    return "The companies directly mentioned in this news";
+
+}
+
+
+/* =========================================================
+   SIMPLIFY NEWS
+========================================================= */
+
+function simplifyNews(
+    news,
+    company,
+    industry,
+    sentiment
+) {
+
+    const title =
+        news.title;
+
+
+    let direction =
+        "neutral";
 
 
     if (
-        news.length === 0
+        sentiment === "bullish"
     ) {
 
-        container.innerHTML = `
+        direction =
+            "positive";
+
+    }
+
+    else if (
+        sentiment === "bearish"
+    ) {
+
+        direction =
+            "negative";
+
+    }
+
+
+    if (
+        company !==
+        "The companies directly mentioned in this news"
+    ) {
+
+        return `${title}. In simple terms, this news is mainly about ${company}. The development is currently showing a ${direction} signal and may affect the company's business, earnings, valuation or investor expectations depending on how significant the development becomes.`;
+
+    }
+
+
+    return `${title}. In simple terms, the news describes a ${direction} development related to the ${industry} sector. Its importance depends on whether the development changes company earnings, costs, demand, regulation or investor expectations.`;
+
+}
+
+
+/* =========================================================
+   IMPACT DETECTION
+========================================================= */
+
+function determineImpact(
+    text,
+    sentiment
+) {
+
+    const impacts = [];
+
+
+    if (
+        text.includes("profit") ||
+        text.includes("earnings") ||
+        text.includes("revenue")
+    ) {
+
+        impacts.push(
+            "company earnings"
+        );
+
+    }
+
+
+    if (
+        text.includes("investment") ||
+        text.includes("expansion") ||
+        text.includes("capacity")
+    ) {
+
+        impacts.push(
+            "business expansion and future growth"
+        );
+
+    }
+
+
+    if (
+        text.includes("interest rate") ||
+        text.includes("rbi") ||
+        text.includes("inflation")
+    ) {
+
+        impacts.push(
+            "borrowing costs and demand"
+        );
+
+    }
+
+
+    if (
+        text.includes("regulation") ||
+        text.includes("sebi") ||
+        text.includes("government") ||
+        text.includes("policy")
+    ) {
+
+        impacts.push(
+            "regulatory conditions"
+        );
+
+    }
+
+
+    if (
+        text.includes("oil") ||
+        text.includes("crude") ||
+        text.includes("commodity")
+    ) {
+
+        impacts.push(
+            "input costs and margins"
+        );
+
+    }
+
+
+    if (
+        impacts.length ===
+        0
+    ) {
+
+        if (
+            sentiment === "bullish"
+        ) {
+
+            impacts.push(
+                "investor expectations and potential business growth"
+            );
+
+        }
+
+        else if (
+            sentiment === "bearish"
+        ) {
+
+            impacts.push(
+                "investor confidence, costs or business performance"
+            );
+
+        }
+
+        else {
+
+            impacts.push(
+                "investor expectations and business outlook"
+            );
+
+        }
+
+    }
+
+
+    const current =
+        sentiment === "bullish"
+            ? "The immediate impact is likely to be positive if investors see the development as beneficial."
+            : sentiment === "bearish"
+                ? "The immediate impact could be negative if the development increases risk, costs or uncertainty."
+                : "The immediate market impact may remain limited until more information becomes available.";
+
+
+    const future =
+        "The longer-term impact will depend on whether the development actually changes earnings, demand, costs, regulation or future growth.";
+
+
+    return `${current} It is particularly relevant to ${impacts.join(", ")}. ${future}`;
+
+}
+
+
+/* =========================================================
+   TIMING
+========================================================= */
+
+function determineTiming(text) {
+
+    if (
+        text.includes("today") ||
+        text.includes("surge") ||
+        text.includes("falls") ||
+        text.includes("rises") ||
+        text.includes("shares")
+    ) {
+
+        return "Investors can react immediately because the information is already public. The share price may reflect expectations before the company's actual financial results change.";
+
+    }
+
+
+    if (
+        text.includes("quarter") ||
+        text.includes("earnings") ||
+        text.includes("results")
+    ) {
+
+        return "The effect may become clearer when the company reports its next quarterly results.";
+
+    }
+
+
+    if (
+        text.includes("investment") ||
+        text.includes("factory") ||
+        text.includes("expansion") ||
+        text.includes("capacity")
+    ) {
+
+        return "The market may react now based on expectations, while the actual business impact may take several months or years as the investment or expansion takes place.";
+
+    }
+
+
+    if (
+        text.includes("policy") ||
+        text.includes("government") ||
+        text.includes("regulation")
+    ) {
+
+        return "The immediate reaction depends on investor expectations. The actual business impact becomes clearer once the policy or regulation is implemented.";
+
+    }
+
+
+    return "The market can react once investors interpret the information, while the actual business impact may take time to appear in sales, costs or earnings.";
+
+}
+
+
+/* =========================================================
+   AFFECTED PARTIES
+========================================================= */
+
+function determineAffectedParties(
+    text,
+    industry
+) {
+
+    const affected = [];
+
+
+    if (
+        text.includes("investor") ||
+        text.includes("shares") ||
+        text.includes("stock") ||
+        text.includes("market")
+    ) {
+
+        affected.push(
+            "investors and shareholders"
+        );
+
+    }
+
+
+    if (
+        text.includes("customer") ||
+        text.includes("consumer") ||
+        text.includes("demand")
+    ) {
+
+        affected.push(
+            "customers or consumers"
+        );
+
+    }
+
+
+    if (
+        text.includes("employee") ||
+        text.includes("hiring") ||
+        text.includes("jobs")
+    ) {
+
+        affected.push(
+            "employees and job seekers"
+        );
+
+    }
+
+
+    if (
+        text.includes("supplier") ||
+        text.includes("raw material")
+    ) {
+
+        affected.push(
+            "suppliers"
+        );
+
+    }
+
+
+    if (
+        text.includes("government") ||
+        text.includes("tax") ||
+        text.includes("regulation")
+    ) {
+
+        affected.push(
+            "government and regulators"
+        );
+
+    }
+
+
+    if (
+        affected.length ===
+        0
+    ) {
+
+        affected.push(
+            "companies, investors and other participants in the " +
+            industry.toLowerCase() +
+            " industry"
+        );
+
+    }
+
+
+    return affected.join(
+        ", "
+    ) + ".";
+
+}
+
+
+/* =========================================================
+   RENDER NEWS
+========================================================= */
+
+function renderNews() {
+
+    if (
+        !newsContainer
+    ) {
+        return;
+    }
+
+
+    let filteredNews =
+        [...allNews];
+
+
+    /* MARKET FILTER */
+
+    if (
+        currentMarket !==
+        "all"
+    ) {
+
+        filteredNews =
+            filteredNews.filter(
+                news =>
+                    news.market ===
+                    currentMarket
+            );
+
+    }
+
+
+    /* INDUSTRY FILTER */
+
+    if (
+        currentIndustry !==
+        "all"
+    ) {
+
+        filteredNews =
+            filteredNews.filter(
+                news =>
+                    news.industry ===
+                    currentIndustry
+            );
+
+    }
+
+
+    /* SENTIMENT FILTER */
+
+    if (
+        currentSentiment !==
+        "all"
+    ) {
+
+        filteredNews =
+            filteredNews.filter(
+                news =>
+                    news.sentiment ===
+                    currentSentiment
+            );
+
+    }
+
+
+    /* SEARCH */
+
+    if (
+        searchTerm
+    ) {
+
+        filteredNews =
+            filteredNews.filter(
+                news => {
+
+                    const combined =
+                        (
+                            news.title +
+                            " " +
+                            news.description +
+                            " " +
+                            news.industry
+                        ).toLowerCase();
+
+
+                    return combined.includes(
+                        searchTerm
+                    );
+
+                }
+            );
+
+    }
+
+
+    /* SORT BY DATE */
+
+    filteredNews.sort(
+        (a, b) =>
+            b.timestamp -
+            a.timestamp
+    );
+
+
+    /* RESULTS */
+
+    if (
+        resultsInfo
+    ) {
+
+        resultsInfo.textContent =
+            `${filteredNews.length} news stories found`;
+
+    }
+
+
+    /* EMPTY STATE */
+
+    if (
+        filteredNews.length ===
+        0
+    ) {
+
+        newsContainer.innerHTML = `
 
             <div class="empty-state">
 
-                <h3>
-                    No news found
-                </h3>
+                <h3>No news found</h3>
 
                 <p>
                     Try changing your search
@@ -2313,198 +1375,486 @@ function displayNews(
     }
 
 
-    news.forEach(
-        (article, index) => {
+    /* LIMIT */
 
-            container.appendChild(
-                createNewsCard(
-                    article,
-                    index
-                )
+    const displayNews =
+        filteredNews.slice(
+            0,
+            50
+        );
+
+
+    newsContainer.innerHTML =
+        displayNews
+            .map(
+                createNewsCard
+            )
+            .join("");
+
+}
+
+
+/* =========================================================
+   CREATE NEWS CARD
+========================================================= */
+
+function createNewsCard(
+    news,
+    index
+) {
+
+    const sentimentClass =
+        news.sentiment;
+
+
+    const sentimentText =
+        news.sentiment === "bullish"
+            ? "BULLISH"
+            : news.sentiment === "bearish"
+                ? "BEARISH"
+                : "NEUTRAL";
+
+
+    const formattedDate =
+        formatDate(
+            news.date
+        );
+
+
+    const analysis =
+        news.analysis;
+
+
+    return `
+
+        <article
+            class="news-card"
+            data-index="${index}"
+        >
+
+            <div class="news-top">
+
+                <div class="news-meta">
+
+                    <span class="news-source">
+                        ${escapeHTML(news.source)}
+                    </span>
+
+                    <span class="news-industry">
+                        ${escapeHTML(news.industry)}
+                    </span>
+
+                </div>
+
+
+                <span
+                    class="sentiment-label ${sentimentClass}"
+                >
+                    ${sentimentText}
+                </span>
+
+            </div>
+
+
+            <h3>
+                ${escapeHTML(news.title)}
+            </h3>
+
+
+            <p class="news-description">
+
+                ${escapeHTML(
+                    shortenDescription(
+                        news.description
+                    )
+                )}
+
+            </p>
+
+
+            <div class="news-bottom">
+
+                <a
+                    class="read-link"
+                    href="${news.link}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    Read full article →
+                </a>
+
+
+                <button
+                    class="explain-btn"
+                    onclick="toggleAnalysis(${index})"
+                >
+                    Understand this news
+                </button>
+
+            </div>
+
+
+            <div
+                class="news-analysis"
+                id="analysis-${index}"
+            >
+
+                <div class="analysis-title">
+                    🧠 Understand This News
+                </div>
+
+
+                <div class="analysis-item">
+
+                    <strong>
+                        1. What is the news saying?
+                    </strong>
+
+                    <span>
+                        ${escapeHTML(
+                            analysis.simple
+                        )}
+                    </span>
+
+                </div>
+
+
+                <div class="analysis-item">
+
+                    <strong>
+                        2. Which company / stock is involved?
+                    </strong>
+
+                    <span>
+                        ${escapeHTML(
+                            analysis.company
+                        )}
+                    </span>
+
+                </div>
+
+
+                <div class="analysis-item">
+
+                    <strong>
+                        3. Which industry is affected?
+                    </strong>
+
+                    <span>
+                        ${escapeHTML(
+                            analysis.industry
+                        )}
+                    </span>
+
+                </div>
+
+
+                <div class="analysis-item">
+
+                    <strong>
+                        4. What is the current / future impact?
+                    </strong>
+
+                    <span>
+                        ${escapeHTML(
+                            analysis.impact
+                        )}
+                    </span>
+
+                </div>
+
+
+                <div class="analysis-item">
+
+                    <strong>
+                        5. When will the impact become visible?
+                    </strong>
+
+                    <span>
+                        ${escapeHTML(
+                            analysis.timing
+                        )}
+                    </span>
+
+                </div>
+
+
+                <div class="analysis-item">
+
+                    <strong>
+                        6. Who is affected?
+                    </strong>
+
+                    <span>
+                        ${escapeHTML(
+                            analysis.affected
+                        )}
+                    </span>
+
+                </div>
+
+            </div>
+
+        </article>
+
+    `;
+
+}
+
+
+/* =========================================================
+   TOGGLE NEWS ANALYSIS
+========================================================= */
+
+function toggleAnalysis(
+    index
+) {
+
+    const analysis =
+        document.getElementById(
+            `analysis-${index}`
+        );
+
+
+    if (
+        !analysis
+    ) {
+        return;
+    }
+
+
+    const button =
+        analysis
+            .closest(".news-card")
+            ?.querySelector(
+                ".explain-btn"
+            );
+
+
+    const isOpen =
+        analysis.classList.contains(
+            "show"
+        );
+
+
+    /* Close */
+
+    if (
+        isOpen
+    ) {
+
+        analysis.classList.remove(
+            "show"
+        );
+
+        if (
+            button
+        ) {
+
+            button.textContent =
+                "Understand this news";
+
+        }
+
+        return;
+
+    }
+
+
+    /* Open */
+
+    analysis.classList.add(
+        "show"
+    );
+
+
+    if (
+        button
+    ) {
+
+        button.textContent =
+            "Hide explanation";
+
+    }
+
+}
+
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+function setupSearch() {
+
+    if (
+        !searchInput
+    ) {
+        return;
+    }
+
+
+    searchInput.addEventListener(
+        "input",
+        event => {
+
+            searchTerm =
+                event.target.value
+                    .trim()
+                    .toLowerCase();
+
+
+            renderNews();
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   FILTERS
+========================================================= */
+
+function setupFilters() {
+
+
+    filterButtons.forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    filterButtons.forEach(
+                        btn =>
+                            btn.classList.remove(
+                                "active"
+                            )
+                    );
+
+
+                    button.classList.add(
+                        "active"
+                    );
+
+
+                    currentMarket =
+                        button.dataset.market ||
+                        button.dataset.filter ||
+                        "all";
+
+
+                    renderNews();
+
+                }
             );
 
         }
     );
 
 
-    document.getElementById(
-        "resultsCount"
-    ).textContent =
-        `${news.length} articles displayed`;
+    sentimentButtons.forEach(
+        button => {
 
-}
+            button.addEventListener(
+                "click",
+                () => {
 
-
-/* ==========================================
-   TOGGLE NEWS EXPLANATION
-========================================== */
-
-function toggleAnalysis(
-    index
-) {
-
-    const cards =
-        document.querySelectorAll(
-            ".news-card"
-        );
+                    sentimentButtons.forEach(
+                        btn =>
+                            btn.classList.remove(
+                                "active"
+                            )
+                    );
 
 
-    const card =
-        cards[index];
+                    button.classList.add(
+                        "active"
+                    );
 
 
-    if (
-        !card
-    ) return;
+                    currentSentiment =
+                        button.dataset.sentiment ||
+                        "all";
 
 
-    const analysis =
-        card.querySelector(
-            ".news-analysis"
-        );
+                    renderNews();
 
+                }
+            );
 
-    const button =
-        card.querySelector(
-            ".explain-btn"
-        );
-
-
-    analysis.classList.toggle(
-        "show"
+        }
     );
 
+}
 
-    if (
 
-        analysis.classList.contains(
-            "show"
-        )
+/* =========================================================
+   DASHBOARD
+========================================================= */
 
-    ) {
+function updateDashboard() {
 
-        button.textContent =
-            "▲ Hide explanation";
+    updateMarketGauge(
+        "india",
+        "India"
+    );
 
-    }
+    updateMarketGauge(
+        "global",
+        "Global"
+    );
 
-    else {
+    updateSentimentBreakdown();
 
-        button.textContent =
-            "🧠 Explain this news";
+    updateSectorBreakdown();
 
-    }
+    updateDate();
 
 }
 
 
-/* ==========================================
-   FILTER NEWS
-========================================== */
+/* =========================================================
+   MARKET GAUGE
+========================================================= */
 
-function filterNews() {
+function updateMarketGauge(
+    type,
+    market
+) {
 
-    const filtered =
+    const news =
         allNews.filter(
-            article => {
-
-
-                const title =
-                    article.title ||
-                    "";
-
-
-                const description =
-                    article.description ||
-                    "";
-
-
-                const text =
-                    `${title} ${description}`
-                    .toLowerCase();
-
-
-                const sentiment =
-                    analyzeSentiment(
-                        title,
-                        description
-                    );
-
-
-                const regionMatch =
-
-                    selectedRegion === "all" ||
-
-                    article.region ===
-                        selectedRegion;
-
-
-                const sentimentMatch =
-
-                    selectedSentiment === "all" ||
-
-                    sentiment ===
-                        selectedSentiment;
-
-
-                const searchMatch =
-
-                    searchTerm === "" ||
-
-                    text.includes(
-                        searchTerm
-                    );
-
-
-                return (
-
-                    regionMatch &&
-
-                    sentimentMatch &&
-
-                    searchMatch
-
-                );
-
-            }
+            item =>
+                item.market ===
+                market
         );
 
 
-    displayNews(
-        filtered
-    );
+    if (
+        news.length ===
+        0
+    ) {
+        return;
+    }
 
-}
 
+    let bullish =
+        0;
 
-/* ==========================================
-   CALCULATE SENTIMENT
-========================================== */
+    let bearish =
+        0;
 
-function calculateSentiment(
-    news
-) {
-
-    let bullish = 0;
-
-    let neutral = 0;
-
-    let bearish = 0;
+    let neutral =
+        0;
 
 
     news.forEach(
-        article => {
-
-
-            const sentiment =
-                analyzeSentiment(
-                    article.title || "",
-                    article.description || ""
-                );
-
+        item => {
 
             if (
-                sentiment === "Bullish"
+                item.sentiment ===
+                "bullish"
             ) {
 
                 bullish++;
@@ -2512,7 +1862,8 @@ function calculateSentiment(
             }
 
             else if (
-                sentiment === "Bearish"
+                item.sentiment ===
+                "bearish"
             ) {
 
                 bearish++;
@@ -2531,155 +1882,36 @@ function calculateSentiment(
 
     const total =
         bullish +
-        neutral +
-        bearish;
+        bearish +
+        neutral;
 
 
-    if (
-        total === 0
-    ) {
-
-        return {
-
-            score: 50,
-
-            bullish: 0,
-
-            neutral: 0,
-
-            bearish: 0
-
-        };
-
-    }
-
-
-    /*
-       Convert sentiment into 0-100.
-
-       100 = strongly bullish
-       50  = neutral
-       0   = strongly bearish
-    */
-
-    const rawScore =
-
-        (
-
-            (bullish - bearish) /
-            total
-
-        ) * 50 + 50;
-
-
-    return {
-
-        score:
-
-            Math.round(
-
-                Math.max(
-
-                    0,
-
-                    Math.min(
-                        100,
-                        rawScore
-                    )
-
-                )
-
-            ),
-
-        bullish,
-
-        neutral,
-
-        bearish
-
-    };
-
-}
-
-
-/* ==========================================
-   GET MARKET STATUS
-========================================== */
-
-function getMarketStatus(
-    score
-) {
-
-    if (
-        score >= 65
-    ) {
-
-        return "Bullish";
-
-    }
-
-
-    if (
-        score <= 35
-    ) {
-
-        return "Bearish";
-
-    }
-
-
-    return "Neutral";
-
-}
-
-
-/* ==========================================
-   UPDATE MARKET GAUGE
-========================================== */
-
-function updateMarketGauge(
-    type,
-    news
-) {
-
-    const sentiment =
-        calculateSentiment(
-            news
-        );
-
+    /* Sentiment score from 0 to 100 */
 
     const score =
-        sentiment.score;
+        total === 0
+            ? 50
+            : Math.round(
+                (
+                    (
+                        bullish +
+                        neutral * 0.5
+                    ) /
+                    total
+                ) * 100
+            );
 
-
-    const status =
-        getMarketStatus(
-            score
-        );
-
-
-    /*
-       Score ranges from 0-100.
-
-       0   = Bearish
-       50  = Neutral
-       100 = Bullish
-    */
 
     const pointer =
         document.getElementById(
-            `${type}Pointer`
+            `${type}GaugePointer`
         );
 
 
-    pointer.style.left =
-        `${score}%`;
-
-
-    document.getElementById(
-        `${type}Score`
-    ).textContent =
-        score;
+    const scoreElement =
+        document.getElementById(
+            `${type}Score`
+        );
 
 
     const statusElement =
@@ -2688,30 +1920,75 @@ function updateMarketGauge(
         );
 
 
-    statusElement.textContent =
-        status;
+    if (
+        pointer
+    ) {
+
+        pointer.style.left =
+            `${score}%`;
+
+    }
 
 
-    statusElement.className =
-        `status-badge ${status.toLowerCase()}`;
+    if (
+        scoreElement
+    ) {
+
+        scoreElement.textContent =
+            score;
+
+    }
 
 
-    document.getElementById(
-        `${type}Bullish`
-    ).textContent =
-        sentiment.bullish;
+    if (
+        statusElement
+    ) {
+
+        statusElement.classList.remove(
+            "bullish",
+            "bearish",
+            "neutral"
+        );
 
 
-    document.getElementById(
-        `${type}Neutral`
-    ).textContent =
-        sentiment.neutral;
+        if (
+            score >= 60
+        ) {
 
+            statusElement.textContent =
+                "BULLISH";
 
-    document.getElementById(
-        `${type}Bearish`
-    ).textContent =
-        sentiment.bearish;
+            statusElement.classList.add(
+                "bullish"
+            );
+
+        }
+
+        else if (
+            score <= 40
+        ) {
+
+            statusElement.textContent =
+                "BEARISH";
+
+            statusElement.classList.add(
+                "bearish"
+            );
+
+        }
+
+        else {
+
+            statusElement.textContent =
+                "NEUTRAL";
+
+            statusElement.classList.add(
+                "neutral"
+            );
+
+        }
+
+    }
 
 
     const description =
@@ -2721,195 +1998,228 @@ function updateMarketGauge(
 
 
     if (
-        status === "Bullish"
+        description
     ) {
 
-        description.textContent =
+        if (
+            score >= 60
+        ) {
 
-            "Most analyzed news is currently positive, indicating a relatively optimistic market mood.";
+            description.textContent =
+                `News sentiment is currently leaning positive, with more bullish stories than bearish ones.`;
+
+        }
+
+        else if (
+            score <= 40
+        ) {
+
+            description.textContent =
+                `News sentiment is currently leaning negative, with more bearish stories than bullish ones.`;
+
+        }
+
+        else {
+
+            description.textContent =
+                `News sentiment is relatively balanced, with no strong bullish or bearish direction.`;
+
+        }
 
     }
 
-    else if (
-        status === "Bearish"
+
+    updateMiniStats(
+        type,
+        bullish,
+        neutral,
+        bearish
+    );
+
+}
+
+
+/* =========================================================
+   MINI STATS
+========================================================= */
+
+function updateMiniStats(
+    type,
+    bullish,
+    neutral,
+    bearish
+) {
+
+    const bullishElement =
+        document.getElementById(
+            `${type}Bullish`
+        );
+
+    const neutralElement =
+        document.getElementById(
+            `${type}Neutral`
+        );
+
+    const bearishElement =
+        document.getElementById(
+            `${type}Bearish`
+        );
+
+
+    if (
+        bullishElement
     ) {
 
-        description.textContent =
-
-            "Negative news currently outweighs positive news, indicating a cautious market mood.";
+        bullishElement.textContent =
+            bullish;
 
     }
 
-    else {
 
-        description.textContent =
+    if (
+        neutralElement
+    ) {
 
-            "Positive and negative news are relatively balanced, indicating a mixed market mood.";
+        neutralElement.textContent =
+            neutral;
+
+    }
+
+
+    if (
+        bearishElement
+    ) {
+
+        bearishElement.textContent =
+            bearish;
 
     }
 
 }
 
 
-/* ==========================================
-   NEWS BREAKDOWN
-========================================== */
+/* =========================================================
+   SENTIMENT BREAKDOWN
+========================================================= */
 
-function updateNewsBreakdown() {
-
-    const sentiment =
-        calculateSentiment(
-            allNews
-        );
-
+function updateSentimentBreakdown() {
 
     const total =
-
-        sentiment.bullish +
-
-        sentiment.neutral +
-
-        sentiment.bearish;
+        allNews.length;
 
 
     if (
         total === 0
-    ) return;
+    ) {
+        return;
+    }
 
 
-    const bullishPercent =
-
-        Math.round(
-
-            sentiment.bullish /
-            total *
-            100
-
-        );
+    const bullish =
+        allNews.filter(
+            n =>
+                n.sentiment ===
+                "bullish"
+        ).length;
 
 
-    const neutralPercent =
-
-        Math.round(
-
-            sentiment.neutral /
-            total *
-            100
-
-        );
+    const neutral =
+        allNews.filter(
+            n =>
+                n.sentiment ===
+                "neutral"
+        ).length;
 
 
-    const bearishPercent =
-
-        100 -
-
-        bullishPercent -
-
-        neutralPercent;
-
-
-    document.getElementById(
-        "bullishPercent"
-    ).textContent =
-        `${bullishPercent}%`;
+    const bearish =
+        allNews.filter(
+            n =>
+                n.sentiment ===
+                "bearish"
+        ).length;
 
 
-    document.getElementById(
-        "neutralPercent"
-    ).textContent =
-        `${neutralPercent}%`;
+    setProgress(
+        "bullishProgress",
+        bullish /
+        total *
+        100
+    );
 
 
-    document.getElementById(
-        "bearishPercent"
-    ).textContent =
-        `${bearishPercent}%`;
+    setProgress(
+        "neutralProgress",
+        neutral /
+        total *
+        100
+    );
 
 
-    document.getElementById(
-        "bullishBar"
-    ).style.width =
-        `${bullishPercent}%`;
+    setProgress(
+        "bearishProgress",
+        bearish /
+        total *
+        100
+    );
 
 
-    document.getElementById(
-        "neutralBar"
-    ).style.width =
-        `${neutralPercent}%`;
+    setText(
+        "bullishCount",
+        bullish
+    );
 
+    setText(
+        "neutralCount",
+        neutral
+    );
 
-    document.getElementById(
-        "bearishBar"
-    ).style.width =
-        `${bearishPercent}%`;
+    setText(
+        "bearishCount",
+        bearish
+    );
 
 }
 
 
-/* ==========================================
-   TRENDING SECTORS
-========================================== */
+/* =========================================================
+   SECTOR BREAKDOWN
+========================================================= */
 
-function updateTrendingSectors() {
+function updateSectorBreakdown() {
 
-    const sectorCounts = {};
+    const sectorCounts =
+        {};
 
 
     allNews.forEach(
-        article => {
+        news => {
 
+            const sector =
+                news.industry;
 
-            const industry =
-                detectIndustry(
-                    article.title || "",
-                    article.description || ""
-                );
-
-
-            /*
-               A news article may belong
-               to two industries.
-            */
-
-            industry
-                .split(" & ")
-                .forEach(
-                    sector => {
-
-
-                        if (
-                            !sectorCounts[sector]
-                        ) {
-
-                            sectorCounts[sector] = 0;
-
-                        }
-
-
-                        sectorCounts[sector]++;
-
-                    }
-                );
+            sectorCounts[sector] =
+                (
+                    sectorCounts[sector] ||
+                    0
+                ) + 1;
 
         }
     );
 
 
-    const sectors =
-
+    const sorted =
         Object.entries(
             sectorCounts
         )
-
-        .sort(
-            (a, b) =>
-                b[1] - a[1]
-        )
-
-        .slice(
-            0,
-            5
-        );
+            .sort(
+                (a, b) =>
+                    b[1] -
+                    a[1]
+            )
+            .slice(
+                0,
+                8
+            );
 
 
     const container =
@@ -2918,522 +2228,470 @@ function updateTrendingSectors() {
         );
 
 
-    container.innerHTML = "";
-
-
     if (
-        sectors.length === 0
+        !container
     ) {
-
-        container.innerHTML =
-            "<p>No sector data available.</p>";
-
         return;
-
     }
 
 
     const max =
-        sectors[0][1];
+        sorted.length
+            ? sorted[0][1]
+            : 1;
 
 
-    sectors.forEach(
-        ([sector, count]) => {
+    container.innerHTML =
+        sorted
+            .map(
+                ([sector, count]) => `
 
+                    <div class="sector-row">
 
-            const percentage =
+                        <div class="sector-top">
 
-                Math.round(
+                            <span class="sector-name">
+                                ${escapeHTML(sector)}
+                            </span>
 
-                    count /
-                    max *
-                    100
+                            <span class="sector-count">
+                                ${count} stories
+                            </span>
 
-                );
+                        </div>
 
 
-            const row =
-                document.createElement(
-                    "div"
-                );
+                        <div class="sector-bar">
 
+                            <div
+                                class="sector-bar-fill"
+                                style="width:${(
+                                    count /
+                                    max *
+                                    100
+                                )}%"
+                            ></div>
 
-            row.className =
-                "sector-row";
+                        </div>
 
+                    </div>
 
-            row.innerHTML = `
-
-                <div class="sector-top">
-
-                    <span class="sector-name">
-
-                        ${sector}
-
-                    </span>
-
-                    <span class="sector-count">
-
-                        ${count} articles
-
-                    </span>
-
-                </div>
-
-
-                <div class="sector-bar">
-
-                    <div
-                        class="sector-bar-fill"
-                        style="width:${percentage}%"
-                    ></div>
-
-                </div>
-
-            `;
-
-
-            /*
-               Clicking a sector searches
-               for that industry.
-            */
-
-            row.addEventListener(
-                "click",
-                () => {
-
-
-                    document.getElementById(
-                        "searchInput"
-                    ).value =
-                        sector;
-
-
-                    searchTerm =
-                        sector.toLowerCase();
-
-
-                    filterNews();
-
-
-                    window.scrollTo({
-
-                        top:
-
-                            document.querySelector(
-                                ".news-section"
-                            ).offsetTop - 80,
-
-                        behavior:
-                            "smooth"
-
-                    });
-
-                }
-            );
-
-
-            container.appendChild(
-                row
-            );
-
-        }
-    );
-
-}
-
-
-/* ==========================================
-   LOAD INDIA NEWS
-========================================== */
-
-async function loadIndiaNews() {
-
-    let news = [];
-
-
-    for (
-        const feed of indiaFeeds
-    ) {
-
-        const data =
-            await fetchNews(
-                feed
-            );
-
-
-        news =
-            news.concat(
-                data
-            );
-
-    }
-
-
-    news =
-        news.map(
-            article => ({
-
-                ...article,
-
-                region: "india"
-
-            })
-        );
-
-
-    return news;
-
-}
-
-
-/* ==========================================
-   LOAD GLOBAL NEWS
-========================================== */
-
-async function loadGlobalNews() {
-
-    let news = [];
-
-
-    for (
-        const feed of globalFeeds
-    ) {
-
-        const data =
-            await fetchNews(
-                feed
-            );
-
-
-        news =
-            news.concat(
-                data
-            );
-
-    }
-
-
-    news =
-        news.map(
-            article => ({
-
-                ...article,
-
-                region: "global"
-
-            })
-        );
-
-
-    return news;
-
-}
-
-
-/* ==========================================
-   LOAD EVERYTHING
-========================================== */
-
-async function loadDashboard() {
-
-    try {
-
-
-        const [
-            indiaNews,
-            globalNews
-        ] = await Promise.all([
-
-            loadIndiaNews(),
-
-            loadGlobalNews()
-
-        ]);
-
-
-        /*
-           Keep latest articles.
-        */
-
-        allNews = [
-
-            ...indiaNews.slice(
-                0,
-                15
-            ),
-
-            ...globalNews.slice(
-                0,
-                15
+                `
             )
-
-        ];
-
-
-        /*
-           Market gauges
-        */
-
-        updateMarketGauge(
-            "india",
-            indiaNews
-        );
-
-
-        updateMarketGauge(
-            "global",
-            globalNews
-        );
-
-
-        /*
-           Dashboard sections
-        */
-
-        updateNewsBreakdown();
-
-
-        updateTrendingSectors();
-
-
-        /*
-           Display all news
-        */
-
-        displayNews(
-            allNews
-        );
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "Dashboard error:",
-            error
-        );
-
-
-        document.getElementById(
-            "newsContainer"
-        ).innerHTML = `
-
-            <div class="empty-state">
-
-                <h3>
-                    Unable to load news
-                </h3>
-
-                <p>
-                    Please check your internet
-                    connection and try again.
-                </p>
-
-            </div>
-
-        `;
-
-    }
+            .join("");
 
 }
 
 
-/* ==========================================
-   REGION FILTER BUTTONS
-========================================== */
+/* =========================================================
+   UPDATE DATE
+========================================================= */
 
-document
-    .querySelectorAll(
-        ".filter-btn"
-    )
-    .forEach(
-        button => {
+function updateDate() {
 
-
-            button.addEventListener(
-                "click",
-                () => {
+    const dateElement =
+        document.getElementById(
+            "currentDate"
+        );
 
 
-                    document
-                        .querySelectorAll(
-                            ".filter-btn"
-                        )
-                        .forEach(
-                            btn =>
-                                btn.classList.remove(
-                                    "active"
-                                )
-                        );
+    if (
+        !dateElement
+    ) {
+        return;
+    }
 
 
-                    button.classList.add(
-                        "active"
-                    );
+    const now =
+        new Date();
 
 
-                    selectedRegion =
-                        button.dataset.region;
+    dateElement.textContent =
+        now.toLocaleDateString(
+            "en-IN",
+            {
+                weekday:
+                    "long",
+
+                day:
+                    "numeric",
+
+                month:
+                    "long",
+
+                year:
+                    "numeric"
+            }
+        );
+
+}
 
 
-                    filterNews();
+/* =========================================================
+   THEME
+========================================================= */
 
-                }
-            );
+function setupTheme() {
 
-        }
-    );
-
-
-/* ==========================================
-   SENTIMENT FILTER BUTTONS
-========================================== */
-
-document
-    .querySelectorAll(
-        ".sentiment-filter"
-    )
-    .forEach(
-        button => {
+    if (
+        !themeButton
+    ) {
+        return;
+    }
 
 
-            button.addEventListener(
-                "click",
-                () => {
-
-
-                    document
-                        .querySelectorAll(
-                            ".sentiment-filter"
-                        )
-                        .forEach(
-                            btn =>
-                                btn.classList.remove(
-                                    "active"
-                                )
-                        );
-
-
-                    button.classList.add(
-                        "active"
-                    );
-
-
-                    selectedSentiment =
-                        button.dataset.sentiment;
-
-
-                    filterNews();
-
-                }
-            );
-
-        }
-    );
-
-
-/* ==========================================
-   SEARCH
-========================================== */
-
-document
-    .getElementById(
-        "searchInput"
-    )
-    .addEventListener(
-        "input",
-        event => {
-
-
-            searchTerm =
-
-                event.target.value
-                    .toLowerCase()
-                    .trim();
-
-
-            filterNews();
-
-        }
-    );
-
-
-/* ==========================================
-   DARK / LIGHT MODE
-========================================== */
-
-document
-    .getElementById(
-        "themeToggle"
-    )
-    .addEventListener(
+    themeButton.addEventListener(
         "click",
         () => {
 
+            document.body.classList.toggle(
+                "light-mode"
+            );
 
-            document.body
-                .classList.toggle(
+
+            const isLight =
+                document.body.classList.contains(
                     "light-mode"
                 );
 
 
-            const isLight =
-
-                document.body
-                    .classList.contains(
-                        "light-mode"
-                    );
-
-
-            document.getElementById(
-                "themeToggle"
-            ).textContent =
-
+            localStorage.setItem(
+                "finpulse-theme",
                 isLight
+                    ? "light"
+                    : "dark"
+            );
 
-                    ? "🌙"
 
-                    : "☀️";
+            themeButton.textContent =
+                isLight
+                    ? "☀️"
+                    : "🌙";
 
         }
     );
 
-
-/* ==========================================
-   CURRENT DATE
-========================================== */
-
-const dateElement =
-    document.getElementById(
-        "currentDate"
-    );
+}
 
 
-const today =
-    new Date();
+/* =========================================================
+   INITIALIZE THEME
+========================================================= */
+
+function initializeTheme() {
+
+    const savedTheme =
+        localStorage.getItem(
+            "finpulse-theme"
+        );
 
 
-dateElement.textContent =
+    if (
+        savedTheme ===
+        "light"
+    ) {
 
-    today.toLocaleDateString(
+        document.body.classList.add(
+            "light-mode"
+        );
+
+
+        if (
+            themeButton
+        ) {
+
+            themeButton.textContent =
+                "☀️";
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+function showLoading() {
+
+    if (
+        !newsContainer
+    ) {
+        return;
+    }
+
+
+    newsContainer.innerHTML = `
+
+        <div class="loading-card">
+
+            <div class="loader"></div>
+
+            <p>
+                Loading financial news...
+            </p>
+
+        </div>
+
+    `;
+
+}
+
+
+/* =========================================================
+   ERROR
+========================================================= */
+
+function showError() {
+
+    if (
+        !newsContainer
+    ) {
+        return;
+    }
+
+
+    newsContainer.innerHTML = `
+
+        <div class="empty-state">
+
+            <h3>
+                Unable to load news
+            </h3>
+
+            <p>
+                Please check your internet
+                connection and try again.
+            </p>
+
+        </div>
+
+    `;
+
+}
+
+
+/* =========================================================
+   HELPER: PROGRESS
+========================================================= */
+
+function setProgress(
+    id,
+    value
+) {
+
+    const element =
+        document.getElementById(
+            id
+        );
+
+
+    if (
+        element
+    ) {
+
+        element.style.width =
+            `${Math.min(
+                100,
+                Math.max(
+                    0,
+                    value
+                )
+            )}%`;
+
+    }
+
+}
+
+
+/* =========================================================
+   HELPER: TEXT
+========================================================= */
+
+function setText(
+    id,
+    value
+) {
+
+    const element =
+        document.getElementById(
+            id
+        );
+
+
+    if (
+        element
+    ) {
+
+        element.textContent =
+            value;
+
+    }
+
+}
+
+
+/* =========================================================
+   FORMAT DATE
+========================================================= */
+
+function formatDate(
+    date
+) {
+
+    if (
+        !date
+    ) {
+
+        return "";
+
+    }
+
+
+    const parsed =
+        new Date(
+            date
+        );
+
+
+    if (
+        Number.isNaN(
+            parsed.getTime()
+        )
+    ) {
+
+        return "";
+
+    }
+
+
+    return parsed.toLocaleString(
         "en-IN",
         {
+            day:
+                "numeric",
 
-            weekday: "long",
+            month:
+                "short",
 
-            day: "numeric",
+            hour:
+                "2-digit",
 
-            month: "long",
-
-            year: "numeric"
-
+            minute:
+                "2-digit"
         }
     );
 
+}
 
-/* ==========================================
-   START APPLICATION
-========================================== */
 
-loadDashboard();
+/* =========================================================
+   SHORTEN DESCRIPTION
+========================================================= */
+
+function shortenDescription(
+    text
+) {
+
+    if (
+        !text
+    ) {
+
+        return "No additional description available.";
+
+    }
+
+
+    if (
+        text.length <= 350
+    ) {
+
+        return text;
+
+    }
+
+
+    return (
+        text.substring(
+            0,
+            350
+        ) +
+        "..."
+    );
+
+}
+
+
+/* =========================================================
+   ESCAPE HTML
+========================================================= */
+
+function escapeHTML(
+    text
+) {
+
+    if (
+        text === undefined ||
+        text === null
+    ) {
+
+        return "";
+
+    }
+
+
+    return String(text)
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+/* =========================================================
+   REFRESH NEWS
+========================================================= */
+
+function refreshNews() {
+
+    loadNews();
+
+}
+
+
+/* =========================================================
+   AUTO REFRESH
+========================================================= */
+
+setInterval(
+    () => {
+
+        loadNews();
+
+    },
+    15 * 60 * 1000
+);
+
+
+/* =========================================================
+   END OF FINPULSE
+========================================================= */
