@@ -1,220 +1,708 @@
-const FEEDS = [
-  { region: 'india', category: 'economy', source: 'Economic Times', url: 'https://economictimes.indiatimes.com/news/economy/rssfeeds/1373380680.cms' },
-  { region: 'india', category: 'markets', source: 'Times of India', url: 'https://timesofindia.indiatimes.com/rssfeeds/1898055.cms' },
-  { region: 'global', category: 'markets', source: 'Yahoo Finance', url: 'https://finance.yahoo.com/news/rssindex' },
-  { region: 'global', category: 'economy', source: 'CNBC Economy', url: 'https://search.cnbc.com/rs/search/combinednavbar/rss?partnerId=wr2012&id=20910258' }
+const RSS2JSON_API = "https://api.rss2json.com/v1/api.json?rss_url=";
+
+
+/* -----------------------------------
+   RSS FEEDS
+----------------------------------- */
+
+const indiaFeeds = [
+    "https://economictimes.indiatimes.com/rssfeedsdefault.cms",
+    "https://timesofindia.indiatimes.com/rssfeeds/1898055.cms"
 ];
 
-const FALLBACK_NEWS = [
-  {
-    title: "RBI Monetary Policy Committee Keeps Repo Rate Steady to Balance Growth",
-    description: "The Reserve Bank of India maintains interest rates while monitoring inflation metrics and consumer demand.",
-    link: "https://economictimes.indiatimes.com",
-    source: "Economic Times",
-    category: "economy",
-    region: "india",
-    pubDate: new Date().toISOString()
-  },
-  {
-    title: "Indian Manufacturing Sector Output Expands on Strong Domestic Demand",
-    description: "Factory activity across industrial regions posts robust quarterly growth numbers.",
-    link: "https://timesofindia.indiatimes.com",
-    source: "Times of India",
-    category: "economy",
-    region: "india",
-    pubDate: new Date().toISOString()
-  },
-  {
-    title: "Global Central Banks Evaluate Inflation Metrics Ahead of Policy Meetings",
-    description: "International monetary authorities analyze labor data while equity markets show steady trading volumes.",
-    link: "https://finance.yahoo.com",
-    source: "Yahoo Finance",
-    category: "markets",
-    region: "global",
-    pubDate: new Date().toISOString()
-  },
-  {
-    title: "Technology Stocks Lead Global Market Indices Higher on Strong Corporate Earnings",
-    description: "Cloud computing and enterprise software earnings beat consensus estimates across major exchanges.",
-    link: "https://search.cnbc.com",
-    source: "CNBC",
-    category: "markets",
-    region: "global",
-    pubDate: new Date().toISOString()
-  }
+const globalFeeds = [
+    "https://finance.yahoo.com/news/rssindex",
+    "https://www.cnbc.com/id/100003114/device/rss/rss.html"
 ];
 
-const POSITIVE_WORDS = ['surge', 'rally', 'gain', 'growth', 'profit', 'boost', 'record', 'bullish', 'exceed', 'rise', 'positive', 'strong', 'jump', 'expansion', 'soars', 'steady', 'expands'];
-const NEGATIVE_WORDS = ['drop', 'fall', 'slump', 'recession', 'inflation', 'loss', 'bearish', 'cut', 'lawsuit', 'warning', 'risk', 'decline', 'crisis', 'default', 'deficit'];
 
-let allArticles = [];
-let currentCategory = 'all';
-let searchQuery = '';
+/* -----------------------------------
+   POSITIVE / NEGATIVE KEYWORDS
+----------------------------------- */
 
-window.addEventListener('DOMContentLoaded', () => {
-  initApp();
-});
+const positiveWords = [
+    "growth",
+    "profit",
+    "surge",
+    "increase",
+    "rise",
+    "gain",
+    "record",
+    "boost",
+    "strong",
+    "positive",
+    "recovery",
+    "expansion"
+];
 
-async function initApp() {
-  setupEventListeners();
-  await fetchAllFeeds();
-}
+const negativeWords = [
+    "loss",
+    "fall",
+    "decline",
+    "drop",
+    "crisis",
+    "weak",
+    "risk",
+    "debt",
+    "inflation",
+    "layoff",
+    "slowdown",
+    "warning"
+];
 
-function setupEventListeners() {
-  const searchInput = document.getElementById('searchInput');
-  const filterBtns = document.querySelectorAll('.filter-btn');
 
-  if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-      searchQuery = e.target.value.toLowerCase();
-      renderNews();
-    });
-  }
+/* -----------------------------------
+   INDUSTRY KEYWORDS
+----------------------------------- */
 
-  filterBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      filterBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentCategory = btn.getAttribute('data-category');
-      renderNews();
-    });
-  });
-}
+const industryKeywords = {
 
-async function fetchAllFeeds() {
-  let fetchedArticles = [];
+    "Banking & Finance": [
+        "bank",
+        "banking",
+        "loan",
+        "credit",
+        "interest rate",
+        "rbi",
+        "finance",
+        "nbfc"
+    ],
 
-  for (const feed of FEEDS) {
+    "Technology": [
+        "technology",
+        "software",
+        "ai",
+        "artificial intelligence",
+        "semiconductor",
+        "chip",
+        "it services"
+    ],
+
+    "Automobile": [
+        "car",
+        "automobile",
+        "vehicle",
+        "ev",
+        "electric vehicle",
+        "auto",
+        "motor"
+    ],
+
+    "Energy": [
+        "oil",
+        "gas",
+        "energy",
+        "petrol",
+        "diesel",
+        "renewable",
+        "solar"
+    ],
+
+    "Pharmaceuticals": [
+        "pharma",
+        "drug",
+        "medicine",
+        "healthcare",
+        "hospital"
+    ],
+
+    "Consumer Goods": [
+        "consumer",
+        "fmcg",
+        "food",
+        "retail",
+        "beverage"
+    ],
+
+    "Real Estate": [
+        "real estate",
+        "property",
+        "housing",
+        "construction"
+    ],
+
+    "Telecommunications": [
+        "telecom",
+        "5g",
+        "mobile network",
+        "jio",
+        "airtel"
+    ]
+};
+
+
+/* -----------------------------------
+   FETCH NEWS
+----------------------------------- */
+
+async function fetchNews(feedURL) {
+
     try {
-      const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}`;
-      const res = await fetch(proxyUrl);
-      const data = await res.json();
 
-      if (data && data.items && data.items.length > 0) {
-        const parsed = data.items.slice(0, 5).map(item => ({
-          title: item.title,
-          description: stripHTML(item.description || item.content || ''),
-          link: item.link,
-          source: feed.source,
-          category: feed.category,
-          region: feed.region,
-          pubDate: item.pubDate
-        }));
-        fetchedArticles.push(...parsed);
-      }
-    } catch (err) {
-      console.warn(`Feed issue on ${feed.source}:`, err);
+        const response = await fetch(
+            RSS2JSON_API + encodeURIComponent(feedURL)
+        );
+
+        const data = await response.json();
+
+        return data.items || [];
+
+    } catch (error) {
+
+        console.error("Error fetching news:", error);
+
+        return [];
+
     }
-  }
-
-  // Always blend with fallback news so the dashboard is guaranteed to be full
-  allArticles = [...fetchedArticles, ...FALLBACK_NEWS].map(article => {
-    const sentiment = calculateSentiment(`${article.title} ${article.description}`);
-    return { ...article, sentiment };
-  });
-
-  calculateRegionSentiment('india', 'indiaScore', 'indiaStatus', 'indiaGaugePointer');
-  calculateRegionSentiment('global', 'globalScore', 'globalStatus', 'globalGaugePointer');
-
-  renderNews();
 }
 
-function calculateSentiment(text) {
-  const words = text.toLowerCase().match(/\b\w+\b/g) || [];
-  let score = 0;
 
-  words.forEach(word => {
-    if (POSITIVE_WORDS.includes(word)) score += 1;
-    if (NEGATIVE_WORDS.includes(word)) score -= 1;
-  });
+/* -----------------------------------
+   SENTIMENT ANALYSIS
+----------------------------------- */
 
-  if (score > 0) return { label: 'Bullish', type: 'positive', score };
-  if (score < 0) return { label: 'Bearish', type: 'negative', score };
-  return { label: 'Neutral', type: 'neutral', score: 0 };
-}
+function analyzeSentiment(title, description) {
 
-function calculateRegionSentiment(region, scoreElId, statusElId, pointerElId) {
-  const regionArticles = allArticles.filter(a => a.region === region);
-  if (regionArticles.length === 0) return;
+    const text = `${title} ${description}`.toLowerCase();
 
-  const total = regionArticles.length;
-  const positive = regionArticles.filter(a => a.sentiment.type === 'positive').length;
-  const negative = regionArticles.filter(a => a.sentiment.type === 'negative').length;
+    let positive = 0;
+    let negative = 0;
 
-  const netRatio = (positive - negative) / total;
-  const normalizedScore = Math.round(netRatio * 100);
+    positiveWords.forEach(word => {
 
-  const scoreEl = document.getElementById(scoreElId);
-  const statusEl = document.getElementById(statusElId);
-  const pointerEl = document.getElementById(pointerElId);
+        if (text.includes(word)) {
+            positive++;
+        }
 
-  if (scoreEl) scoreEl.textContent = (normalizedScore > 0 ? '+' : '') + normalizedScore;
-  if (pointerEl) pointerEl.style.left = `${((normalizedScore + 100) / 200) * 100}%`;
+    });
 
-  if (statusEl) {
-    if (normalizedScore > 10) {
-      statusEl.textContent = "Bullish Sentiment";
-      statusEl.className = "sentiment-status bullish";
-    } else if (normalizedScore < -10) {
-      statusEl.textContent = "Bearish Caution";
-      statusEl.className = "sentiment-status bearish";
-    } else {
-      statusEl.textContent = "Neutral / Balanced";
-      statusEl.className = "sentiment-status neutral";
+    negativeWords.forEach(word => {
+
+        if (text.includes(word)) {
+            negative++;
+        }
+
+    });
+
+    if (positive > negative) {
+        return "Bullish";
     }
-  }
+
+    if (negative > positive) {
+        return "Bearish";
+    }
+
+    return "Neutral";
 }
 
-function renderNews() {
-  const grid = document.getElementById('newsGrid');
-  if (!grid) return;
 
-  grid.innerHTML = '';
+/* -----------------------------------
+   INDUSTRY DETECTION
+----------------------------------- */
 
-  const filtered = allArticles.filter(article => {
-    const matchesCategory = (currentCategory === 'all') || (article.category === currentCategory);
-    const matchesSearch = article.title.toLowerCase().includes(searchQuery) || 
-                          article.description.toLowerCase().includes(searchQuery) ||
-                          article.source.toLowerCase().includes(searchQuery);
-    return matchesCategory && matchesSearch;
-  });
+function detectIndustry(title, description) {
 
-  if (filtered.length === 0) {
-    grid.innerHTML = `<div class="loading-state card">No headlines matching "${searchQuery}".</div>`;
-    return;
-  }
+    const text = `${title} ${description}`.toLowerCase();
 
-  filtered.forEach(item => {
-    const card = document.createElement('article');
-    card.className = 'card news-card';
-    card.innerHTML = `
-      <div>
-        <div class="card-top">
-          <span class="source-tag">${item.source}</span>
-          <span>${formatDate(item.pubDate)}</span>
+    let industries = [];
+
+    for (const industry in industryKeywords) {
+
+        const keywords = industryKeywords[industry];
+
+        const found = keywords.some(keyword =>
+            text.includes(keyword)
+        );
+
+        if (found) {
+            industries.push(industry);
+        }
+    }
+
+    if (industries.length === 0) {
+        return "General Market";
+    }
+
+    return industries.slice(0, 2).join(" & ");
+}
+
+
+/* -----------------------------------
+   SIMPLE NEWS EXPLANATION
+----------------------------------- */
+
+function simplifyNews(title, description) {
+
+    const text = `${title} ${description}`.toLowerCase();
+
+    let explanation = "";
+
+    if (
+        text.includes("interest rate") ||
+        text.includes("rbi") ||
+        text.includes("rate cut")
+    ) {
+
+        explanation =
+            "The news is related to interest rates or monetary policy. " +
+            "In simple terms, changes in interest rates can affect how expensive " +
+            "it is for people and businesses to borrow money.";
+
+    }
+
+    else if (
+        text.includes("profit") ||
+        text.includes("earnings") ||
+        text.includes("revenue")
+    ) {
+
+        explanation =
+            "The company has reported a change in its financial performance. " +
+            "In simple terms, investors are looking at whether the company is " +
+            "making more or less money than before.";
+
+    }
+
+    else if (
+        text.includes("oil") ||
+        text.includes("crude")
+    ) {
+
+        explanation =
+            "The news is related to oil prices or the oil market. " +
+            "In simple terms, changes in oil prices can affect transportation, " +
+            "manufacturing and the cost of many everyday products.";
+
+    }
+
+    else if (
+        text.includes("inflation")
+    ) {
+
+        explanation =
+            "The news is about inflation, which means prices of goods and " +
+            "services are changing. In simple terms, higher inflation can make " +
+            "everyday products more expensive and reduce people's purchasing power.";
+
+    }
+
+    else if (
+        text.includes("stock") ||
+        text.includes("shares") ||
+        text.includes("market")
+    ) {
+
+        explanation =
+            "The news is related to the stock market or a company's shares. " +
+            "In simple terms, investors may change their buying or selling decisions " +
+            "depending on whether they think the news is good or bad for the company.";
+
+    }
+
+    else {
+
+        explanation =
+            "This news describes a recent development that could affect a company, " +
+            "industry or the wider economy. In simple terms, investors and businesses " +
+            "may need to watch how this development changes future business conditions.";
+
+    }
+
+    return explanation;
+}
+
+
+/* -----------------------------------
+   IMPACT ANALYSIS
+----------------------------------- */
+
+function determineImpact(title, description, sentiment) {
+
+    const text = `${title} ${description}`.toLowerCase();
+
+    let impact = "";
+
+    if (
+        text.includes("profit") ||
+        text.includes("growth") ||
+        text.includes("surge") ||
+        text.includes("expansion") ||
+        text.includes("investment")
+    ) {
+
+        impact =
+            "The current impact is generally positive because the development " +
+            "may support business growth, investor confidence or company earnings. " +
+            "If the trend continues, it could have a positive effect in the future.";
+
+    }
+
+    else if (
+        text.includes("loss") ||
+        text.includes("decline") ||
+        text.includes("fall") ||
+        text.includes("crisis") ||
+        text.includes("layoff")
+    ) {
+
+        impact =
+            "The current impact may be negative because the development can put " +
+            "pressure on company performance, employment or investor confidence. " +
+            "If it continues, the effect could become more significant in the future.";
+
+    }
+
+    else if (
+        text.includes("regulation") ||
+        text.includes("government") ||
+        text.includes("policy") ||
+        text.includes("tax")
+    ) {
+
+        impact =
+            "The immediate impact depends on how businesses respond to the policy " +
+            "change. In the future, companies may need to change their costs, " +
+            "operations or investment decisions.";
+
+    }
+
+    else {
+
+        impact =
+            "The impact is still developing. Investors and businesses will need " +
+            "to monitor whether this event creates changes in demand, costs, " +
+            "profits or market sentiment.";
+
+    }
+
+    return impact;
+}
+
+
+/* -----------------------------------
+   WHO IS AFFECTED?
+----------------------------------- */
+
+function identifyAffected(title, description) {
+
+    const text = `${title} ${description}`.toLowerCase();
+
+    let affected = [];
+
+    if (
+        text.includes("stock") ||
+        text.includes("shares") ||
+        text.includes("investor") ||
+        text.includes("market")
+    ) {
+
+        affected.push("Investors");
+    }
+
+    if (
+        text.includes("company") ||
+        text.includes("corporate") ||
+        text.includes("business")
+    ) {
+
+        affected.push("Companies");
+    }
+
+    if (
+        text.includes("consumer") ||
+        text.includes("price") ||
+        text.includes("inflation")
+    ) {
+
+        affected.push("Consumers");
+    }
+
+    if (
+        text.includes("government") ||
+        text.includes("policy") ||
+        text.includes("tax")
+    ) {
+
+        affected.push("Government");
+    }
+
+    if (affected.length === 0) {
+
+        affected.push("Businesses and investors");
+
+    }
+
+    return affected.join(", ");
+}
+
+
+/* -----------------------------------
+   CREATE NEWS ANALYSIS
+----------------------------------- */
+
+function createNewsAnalysis(article) {
+
+    const title = article.title || "";
+    const description = article.description || "";
+
+    const simpleExplanation =
+        simplifyNews(title, description);
+
+    const industry =
+        detectIndustry(title, description);
+
+    const sentiment =
+        analyzeSentiment(title, description);
+
+    const impact =
+        determineImpact(title, description, sentiment);
+
+    const affected =
+        identifyAffected(title, description);
+
+
+    return `
+        <div class="news-analysis">
+
+            <h4>🧠 News Simplified</h4>
+
+            <div class="analysis-item">
+
+                <strong>💡 What is this news saying?</strong>
+
+                <span>
+                    ${simpleExplanation}
+                </span>
+
+            </div>
+
+
+            <div class="analysis-item">
+
+                <strong>🏭 Which industry is affected?</strong>
+
+                <span>
+                    ${industry}
+                </span>
+
+            </div>
+
+
+            <div class="analysis-item">
+
+                <strong>📈 What is the impact?</strong>
+
+                <span>
+                    ${impact}
+                </span>
+
+            </div>
+
+
+            <div class="analysis-item">
+
+                <strong>👥 Who is affected?</strong>
+
+                <span>
+                    ${affected}
+                </span>
+
+            </div>
+
         </div>
-        <a href="${item.link}" target="_blank" class="news-title">${item.title}</a>
-        <p class="news-snippet">${item.description || 'Click link below to read full article...'}</p>
-      </div>
-      <div class="card-bottom">
-        <span class="sentiment-badge ${item.sentiment.type}">${item.sentiment.label}</span>
-        <a href="${item.link}" target="_blank" style="color: var(--accent); font-size:0.8rem; text-decoration:none; font-weight:600;">
-          Read Article <i class="fa-solid fa-arrow-up-right-from-square"></i>
-        </a>
-      </div>
     `;
-    grid.appendChild(card);
-  });
 }
 
-function stripHTML(html) {
-  const tmp = document.createElement("DIV");
-  tmp.innerHTML = html;
-  return tmp.textContent || tmp.innerText || "";
+
+/* -----------------------------------
+   DISPLAY NEWS
+----------------------------------- */
+
+function displayNews(news, containerID) {
+
+    const container =
+        document.getElementById(containerID);
+
+    container.innerHTML = "";
+
+
+    news.forEach(article => {
+
+        const sentiment =
+            analyzeSentiment(
+                article.title || "",
+                article.description || ""
+            );
+
+
+        const card =
+            document.createElement("div");
+
+        card.className = "news-card";
+
+
+        card.innerHTML = `
+
+            <span class="sentiment">
+                ${sentiment}
+            </span>
+
+            <h3>
+                ${article.title}
+            </h3>
+
+            <p>
+                ${article.description || "No description available."}
+            </p>
+
+            <a
+                href="${article.link}"
+                target="_blank"
+            >
+                Read Full News →
+            </a>
+
+            ${createNewsAnalysis(article)}
+
+        `;
+
+
+        container.appendChild(card);
+
+    });
+
 }
 
-function formatDate(dateStr) {
-  if (!dateStr) return 'Today';
-  const d = new Date(dateStr);
-  return isNaN(d.getTime()) ? 'Today' : `${d.getMonth() + 1}/${d.getDate()}`;
+
+/* -----------------------------------
+   CALCULATE MARKET SENTIMENT
+----------------------------------- */
+
+function calculateMarketSentiment(news) {
+
+    let bullish = 0;
+    let bearish = 0;
+    let neutral = 0;
+
+
+    news.forEach(article => {
+
+        const sentiment =
+            analyzeSentiment(
+                article.title || "",
+                article.description || ""
+            );
+
+
+        if (sentiment === "Bullish") {
+            bullish++;
+        }
+
+        else if (sentiment === "Bearish") {
+            bearish++;
+        }
+
+        else {
+            neutral++;
+        }
+
+    });
+
+
+    const total =
+        bullish + bearish + neutral;
+
+
+    if (total === 0) {
+        return 0;
+    }
+
+
+    return Math.round(
+        ((bullish - bearish) / total) * 100
+    );
+
 }
+
+
+/* -----------------------------------
+   LOAD INDIA NEWS
+----------------------------------- */
+
+async function loadIndiaNews() {
+
+    let allNews = [];
+
+
+    for (const feed of indiaFeeds) {
+
+        const news =
+            await fetchNews(feed);
+
+        allNews =
+            allNews.concat(news);
+
+    }
+
+
+    displayNews(
+        allNews.slice(0, 15),
+        "indiaNews"
+    );
+
+
+    const sentiment =
+        calculateMarketSentiment(allNews);
+
+
+    document.getElementById(
+        "indiaSentiment"
+    ).innerHTML =
+        `${sentiment}%`;
+}
+
+
+/* -----------------------------------
+   LOAD GLOBAL NEWS
+----------------------------------- */
+
+async function loadGlobalNews() {
+
+    let allNews = [];
+
+
+    for (const feed of globalFeeds) {
+
+        const news =
+            await fetchNews(feed);
+
+        allNews =
+            allNews.concat(news);
+
+    }
+
+
+    displayNews(
+        allNews.slice(0, 15),
+        "globalNews"
+    );
+
+
+    const sentiment =
+        calculateMarketSentiment(allNews);
+
+
+    document.getElementById(
+        "globalSentiment"
+    ).innerHTML =
+        `${sentiment}%`;
+}
+
+
+/* -----------------------------------
+   START DASHBOARD
+----------------------------------- */
+
+loadIndiaNews();
+
+loadGlobalNews();
